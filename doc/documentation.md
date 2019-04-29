@@ -1,6 +1,4 @@
-<h1>
-	<img src="https://github.com/msotiroff/EasyDynamo/blob/master/logo.jpg" align="left" alt="EasyDynamo">EasyDynamo - fluent configuring and access for DynamoDB with code first aproach.
-</h1>
+## EasyDynamo - fluent configuring and access for DynamoDB with code first aproach.
 
 ------------
 
