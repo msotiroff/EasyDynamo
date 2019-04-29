@@ -6,7 +6,7 @@
     <PackageProjectUrl>https://github.com/msotiroff/EasyDynamo/src</PackageProjectUrl>
     <RepositoryUrl>https://github.com/msotiroff/EasyDynamo</RepositoryUrl>
     <PackageIconUrl>https://github.com/msotiroff/EasyDynamo/logo.jpg</PackageIconUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/msotiroff/EasyDynamo/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/msotiroff/EasyDynamo/master/LICENSE.txt</PackageLicenseUrl>
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
