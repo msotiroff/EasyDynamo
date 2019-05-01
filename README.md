@@ -266,7 +266,7 @@ protected override void OnConfiguring(
 }
 ```
 ### How to create a dynamo table by code first aproach.
-You can run a simple code (using the facade method EnsureCreatedAsync) on building your application to ensure all the tables for your models are created:
+You can run a simple code (using the facade method EnsureCreatedAsync) on building your application to ensure all the tables for your models are created before your application has started:
 
 #### 1. Directly get the context instance from the application services in Startup.cs (not recommended, because the resourses can be disposed before tables have been created).
 ```csharp
@@ -350,7 +350,7 @@ public class ArticleService : IArticleService
 
     public async Task<IEnumerable<Article>> GetArticlesAsync()
     {
-        return await context.Articles.GetAsync();
+        return await this.context.Articles.GetAsync();
     }
 }
 ```
@@ -358,14 +358,14 @@ public class ArticleService : IArticleService
 ```csharp
 public async Task<Article> GetArticleAsync(string id)
 {
-    return await context.Articles.GetAsync(id);
+    return await this.context.Articles.GetAsync(id);
 }
 ```
 ##### 1.3. Get an item by primary key and range key:
 ```csharp
 public async Task<Article> GetArticleAsync(string primaryKey, DateTime rangeKey)
 {
-    return await context.Articles.GetAsync(primaryKey, rangeKey);
+    return await this.context.Articles.GetAsync(primaryKey, rangeKey);
 }
 ```
 ##### 1.4. Get a paginated set of items:
@@ -373,7 +373,7 @@ You should cache the pagination token from the response and pass it to the next 
 ```csharp
 public async Task<IEnumerable<Article>> GetNextPageAsync(int itemsPerPage, string paginationToken)
 {
-    var response = await context.Articles.GetAsync(itemsPerPage, paginationToken);
+    var response = await this.context.Articles.GetAsync(itemsPerPage, paginationToken);
 
     return response.NextResultSet;
 }
