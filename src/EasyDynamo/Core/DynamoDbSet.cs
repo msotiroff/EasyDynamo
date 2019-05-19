@@ -6,6 +6,7 @@ using EasyDynamo.Attributes;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions;
+using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,11 +59,13 @@ namespace EasyDynamo.Core
         /// <exception cref="EntityAlreadyExistException"></exception>
         public async Task AddAsync(TEntity entity)
         {
+            InputValidator.ThrowIfNull(entity);
+
             this.ExecuteTasksOnSave(entity);
 
             await this.EnsureDoesNotExistAsync(entity);
 
-            await this.Base.SaveAsync(entity, this.operationConfig);
+            await this.ExecuteBatchWriteAsync(entity);
         }
         
         /// <summary>
@@ -70,9 +73,11 @@ namespace EasyDynamo.Core
         /// </summary>
         public async Task SaveAsync(TEntity entity)
         {
+            InputValidator.ThrowIfNull(entity);
+
             this.ExecuteTasksOnSave(entity);
 
-            await this.Base.SaveAsync(entity, this.operationConfig);
+            await this.ExecuteBatchWriteAsync(entity);
         }
 
         /// <summary>
@@ -83,13 +88,11 @@ namespace EasyDynamo.Core
         /// </param>
         public async Task SaveManyAsync(IEnumerable<TEntity> entities)
         {
+            InputValidator.ThrowIfNull(entities);
+
             try
             {
-                var batchWrite = this.Base.CreateBatchWrite<TEntity>(this.operationConfig);
-
-                batchWrite.AddPutItems(entities);
-
-                await batchWrite.ExecuteAsync();
+                await this.ExecuteBatchWriteAsync(entities.ToArray());
             }
             catch
             {
@@ -127,6 +130,8 @@ namespace EasyDynamo.Core
         public async Task<PaginationResponse<TEntity>> GetAsync(
             int itemsPerPage, string paginationToken, string indexName = null)
         {
+            InputValidator.ThrowIfNotPositive(itemsPerPage);
+
             var search = this.table.Scan(new ScanOperationConfig
             {
                 PaginationToken = paginationToken,
@@ -150,6 +155,8 @@ namespace EasyDynamo.Core
         /// </summary>
         public async Task<TEntity> GetAsync(object primaryKey)
         {
+            InputValidator.ThrowIfNull(primaryKey);
+
             var entity = await this.Base.LoadAsync<TEntity>(primaryKey, this.operationConfig);
 
             return entity;
@@ -160,6 +167,8 @@ namespace EasyDynamo.Core
         /// </summary>
         public async Task<TEntity> GetAsync(object primaryKey, object rangeKey)
         {
+            InputValidator.ThrowIfAnyNull(primaryKey, rangeKey);
+
             var entity = await this.Base.LoadAsync<TEntity>(
                 primaryKey, rangeKey, this.operationConfig);
 
@@ -176,6 +185,8 @@ namespace EasyDynamo.Core
         public async Task<IEnumerable<TEntity>> FilterAsync(
             Expression<Func<TEntity, bool>> conditionExpression)
         {
+            InputValidator.ThrowIfNull(conditionExpression);
+
             var predicate = conditionExpression.Compile();
             var all = await this.GetAsync();
             var allByCondition = all.Where(e => predicate(e));
@@ -202,6 +213,8 @@ namespace EasyDynamo.Core
             ScanOperator scanOperator, 
             TProperty value)
         {
+            InputValidator.ThrowIfAnyNull(propertyExpression, value);
+
             var memberName = propertyExpression.TryGetMemberName();
             var currentOperationConfig = this.operationConfig.Clone();
             var indexName = this.indexExtractor.ExtractIndex<TEntity>(memberName, this.table);
@@ -238,6 +251,8 @@ namespace EasyDynamo.Core
             TProperty value,
             string indexName = null)
         {
+            InputValidator.ThrowIfAnyNull(propertyExpression, value);
+
             var memberName = propertyExpression.TryGetMemberName();
 
             return await this.FilterAsync(memberName, value, indexName);
@@ -258,6 +273,10 @@ namespace EasyDynamo.Core
         public async Task<IEnumerable<TEntity>> FilterAsync(
             string memberName, object value, string indexName = null)
         {
+            InputValidator.ThrowIfNull(value);
+
+            InputValidator.ThrowIfNullOrWhitespace(memberName);
+
             var index = indexName
                 ?? this.indexExtractor.ExtractIndex<TEntity>(memberName, this.table);
             var configuration = this.operationConfig.Clone();
@@ -277,6 +296,8 @@ namespace EasyDynamo.Core
         /// <exception cref="EntityNotFoundException"></exception>
         public async Task UpdateAsync(TEntity entity)
         {
+            InputValidator.ThrowIfNull(entity);
+
             this.ExecuteTasksOnSave(entity);
 
             await this.EnsureExistAsync(entity);
@@ -289,6 +310,8 @@ namespace EasyDynamo.Core
         /// </summary>
         public async Task RemoveAsync(TEntity entity)
         {
+            InputValidator.ThrowIfNull(entity);
+
             await this.Base.DeleteAsync(entity, this.operationConfig);
         }
 
@@ -297,11 +320,22 @@ namespace EasyDynamo.Core
         /// </summary>
         public async Task RemoveAsync(object primaryKey)
         {
+            InputValidator.ThrowIfNull(primaryKey);
+
             var entity = await this.GetAsync(primaryKey);
 
             await this.Base.DeleteAsync(entity, this.operationConfig);
         }
         
+        private async Task ExecuteBatchWriteAsync(params TEntity[] entities)
+        {
+            var batchWrite = this.Base.CreateBatchWrite<TEntity>(this.operationConfig);
+
+            batchWrite.AddPutItems(entities);
+
+            await batchWrite.ExecuteAsync();
+        }
+
         private async Task EnsureDoesNotExistAsync(TEntity entity)
         {
             var key = this.primaryKeyExtractor.ExtractPrimaryKey(entity);
