@@ -1,11 +1,12 @@
 ﻿using Amazon;
+using EasyDynamo.Abstractions;
 using EasyDynamo.Exceptions;
 using System;
 using System.Collections.Generic;
 
 namespace EasyDynamo.Config
 {
-    public class DynamoContextOptions
+    public class DynamoContextOptions : IDynamoContextOptions
     {
         private static volatile DynamoContextOptions instance;
         private static readonly object instanceLoker = new object();
