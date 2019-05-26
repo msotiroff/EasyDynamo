@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Description>EasyDynamo is a small library that helps developers to access and configure DynamoDB easier. Different configurations can be applied for different environments (development, staging, production) as well as using a local dynamo instance for non production environment. Supports creating dynamo tables correspondings to your models using code first aproach.</Description>
     <PackageProjectUrl>https://github.com/msotiroff/EasyDynamo/tree/master/src</PackageProjectUrl>
     <RepositoryUrl>https://github.com/msotiroff/EasyDynamo</RepositoryUrl>
@@ -19,6 +19,7 @@
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.14.17" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.6" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
