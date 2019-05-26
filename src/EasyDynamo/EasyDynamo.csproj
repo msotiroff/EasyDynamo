@@ -10,9 +10,9 @@
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>Mihail Sotirov</Authors>
-    <PackageReleaseNotes>Added some validation and fixed an issue caused by Amazon.DynamoDBv2.DynamoDBContext.SaveAsync method not saving an item that contains only key attributes. Used BatchWrite.ExecuteAsync instead.</PackageReleaseNotes>
+    <PackageReleaseNotes>Target framework switched to the less restrictive .Net Standard 2.0 instead of .NET Core.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
