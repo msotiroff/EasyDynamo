@@ -20,7 +20,7 @@ namespace EasyDynamo.Tools.Validators
                 return;
             }
 
-            throw new ArgumentException(errorMessage ?? "Value cannot be empty.");
+            throw new ArgumentNullException(errorMessage ?? "Value cannot be empty.");
         }
 
         public static void ThrowIfAnyNullOrWhitespace(params string[] values)
