@@ -17,13 +17,13 @@ namespace EasyDynamo.Builders
         private readonly EntityConfiguration<TEntity> entityConfig;
         private readonly DynamoContextOptions contextOptions;
 
-        private EntityTypeBuilder()
+        protected internal EntityTypeBuilder()
         {
             this.entityConfig = EntityConfiguration<TEntity>.Instance;
             this.contextOptions = DynamoContextOptions.Instance;
         }
 
-        internal static IEntityTypeBuilder<TEntity> Instance
+        protected internal static IEntityTypeBuilder<TEntity> Instance
         {
             get
             {
