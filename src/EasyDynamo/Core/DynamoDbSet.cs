@@ -42,13 +42,12 @@ namespace EasyDynamo.Core
             this.tableNameExtractor = tableNameExtractor;
             this.primaryKeyExtractor = primaryKeyExtractor;
             this.validator = validator;
-
+            this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
             this.entityConfig = EntityConfiguration<TEntity>.Instance;
             this.operationConfig = new DynamoDBOperationConfig
             {
                 OverrideTableName = tableNameExtractor.ExtractTableName<TEntity>(this.table)
             };
-            this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
         }
 
         public IDynamoDBContext Base { get; }
