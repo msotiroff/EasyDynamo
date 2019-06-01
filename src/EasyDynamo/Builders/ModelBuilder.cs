@@ -1,5 +1,6 @@
 ﻿using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
+using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 
@@ -45,6 +46,8 @@ namespace EasyDynamo.Builders
         public ModelBuilder ApplyConfiguration<TEntity>(
             IEntityTypeConfiguration<TEntity> configuration) where TEntity : class, new()
         {
+            InputValidator.ThrowIfNull(configuration, "configuration connot be null.");
+
             var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
             
             configuration.Configure(entityBuilder);
@@ -76,6 +79,8 @@ namespace EasyDynamo.Builders
             Action<IEntityTypeBuilder<TEntity>> buildAction) 
             where TEntity : class, new()
         {
+            InputValidator.ThrowIfNull(buildAction, "buildAction cannot be null.");
+
             var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
 
             this.EntityConfigurationByEntityTypes[typeof(TEntity)] = 
