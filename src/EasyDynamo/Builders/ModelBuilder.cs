@@ -11,7 +11,7 @@ namespace EasyDynamo.Builders
         private static volatile ModelBuilder instance;
         private static readonly object instanceLocker = new object();
         
-        protected internal ModelBuilder()
+        protected ModelBuilder()
         {
             this.EntityConfigurationByEntityTypes = new Dictionary<Type, IEntityConfiguration>();
         }

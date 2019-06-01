@@ -1,6 +1,7 @@
 ﻿using Amazon;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Exceptions;
+using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 
@@ -11,7 +12,7 @@ namespace EasyDynamo.Config
         private static volatile DynamoContextOptions instance;
         private static readonly object instanceLocker = new object();
 
-        private DynamoContextOptions()
+        protected DynamoContextOptions()
         {
             this.TableNameByEntityTypes = new Dictionary<Type, string>();
         }
@@ -35,7 +36,7 @@ namespace EasyDynamo.Config
             }
         }
 
-        internal IDictionary<Type, string> TableNameByEntityTypes { get; }
+        protected internal IDictionary<Type, string> TableNameByEntityTypes { get; }
 
         public string AccessKeyId { get; set; }
         
@@ -49,7 +50,7 @@ namespace EasyDynamo.Config
 
         public string Profile { get; set; }
 
-        internal void ValidateLocalMode()
+        protected internal void ValidateLocalMode()
         {
             if (!this.LocalMode)
             {
@@ -70,7 +71,7 @@ namespace EasyDynamo.Config
             }
         }
 
-        internal void ValidateCloudMode()
+        protected internal void ValidateCloudMode()
         {
             if (this.LocalMode)
             {
@@ -91,11 +92,8 @@ namespace EasyDynamo.Config
 
         public void UseTableName<TEntity>(string tableName) where TEntity : class, new()
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new DynamoContextConfigurationException(
-                    $"Parameter name cannot be empty: {nameof(tableName)}.");
-            }
+            InputValidator.ThrowIfNullOrWhitespace(
+                tableName, $"Parameter name cannot be empty: {nameof(tableName)}.");
 
             this.TableNameByEntityTypes[typeof(TEntity)] = tableName;
         }

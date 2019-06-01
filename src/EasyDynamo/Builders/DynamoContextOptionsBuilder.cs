@@ -14,12 +14,12 @@ namespace EasyDynamo.Builders
 
         private readonly IDynamoContextOptions options;
 
-        protected internal DynamoContextOptionsBuilder(IDynamoContextOptions options = null)
+        protected DynamoContextOptionsBuilder(IDynamoContextOptions options = null)
         {
             this.options = options ?? DynamoContextOptions.Instance;
         }
 
-        protected internal static DynamoContextOptionsBuilder Instance
+        internal static DynamoContextOptionsBuilder Instance
         {
             get
             {
