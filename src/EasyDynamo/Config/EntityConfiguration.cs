@@ -12,7 +12,7 @@ namespace EasyDynamo.Config
         private long writeCapacityUnits;
 
         private static volatile EntityConfiguration<TEntity> instance;
-        private static readonly object instanceLoker = new object();
+        private static readonly object instanceLocker = new object();
 
         private EntityConfiguration()
         {
@@ -31,7 +31,7 @@ namespace EasyDynamo.Config
             {
                 if (instance == null)
                 {
-                    lock (instanceLoker)
+                    lock (instanceLocker)
                     {
                         if (instance == null)
                         {

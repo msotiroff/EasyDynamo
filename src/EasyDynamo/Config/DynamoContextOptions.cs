@@ -9,7 +9,7 @@ namespace EasyDynamo.Config
     public class DynamoContextOptions : IDynamoContextOptions
     {
         private static volatile DynamoContextOptions instance;
-        private static readonly object instanceLoker = new object();
+        private static readonly object instanceLocker = new object();
 
         private DynamoContextOptions()
         {
@@ -22,7 +22,7 @@ namespace EasyDynamo.Config
             {
                 if (instance == null)
                 {
-                    lock (instanceLoker)
+                    lock (instanceLocker)
                     {
                         if (instance == null)
                         {

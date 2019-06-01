@@ -10,7 +10,7 @@ namespace EasyDynamo.Builders
     public class DynamoContextOptionsBuilder
     {
         private static volatile DynamoContextOptionsBuilder instance;
-        private static readonly object instanceLoker = new object();
+        private static readonly object instanceLocker = new object();
 
         private readonly IDynamoContextOptions options;
 
@@ -25,7 +25,7 @@ namespace EasyDynamo.Builders
             {
                 if (instance == null)
                 {
-                    lock (instanceLoker)
+                    lock (instanceLocker)
                     {
                         if (instance == null)
                         {

@@ -9,13 +9,14 @@ using System.Linq.Expressions;
 
 namespace EasyDynamo.Builders
 {
-    public class EntityTypeBuilder<TEntity> : IEntityTypeBuilder<TEntity> where TEntity : class, new()
+    public class EntityTypeBuilder<TEntity> : IEntityTypeBuilder<TEntity> 
+        where TEntity : class, new()
     {
         private static volatile EntityTypeBuilder<TEntity> instance;
-        private static readonly object instanceLoker = new object();
+        private static readonly object instanceLocker = new object();
 
         private readonly EntityConfiguration<TEntity> entityConfig;
-        private readonly DynamoContextOptions contextOptions;
+        private readonly IDynamoContextOptions contextOptions;
 
         protected internal EntityTypeBuilder()
         {
@@ -29,7 +30,7 @@ namespace EasyDynamo.Builders
             {
                 if (instance == null)
                 {
-                    lock (instanceLoker)
+                    lock (instanceLocker)
                     {
                         if (instance == null)
                         {

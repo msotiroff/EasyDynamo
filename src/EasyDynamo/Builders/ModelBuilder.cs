@@ -8,7 +8,7 @@ namespace EasyDynamo.Builders
     public class ModelBuilder
     {
         private static volatile ModelBuilder instance;
-        private static readonly object instanceLoker = new object();
+        private static readonly object instanceLocker = new object();
         
         private ModelBuilder()
         {
@@ -21,7 +21,7 @@ namespace EasyDynamo.Builders
             {
                 if (instance == null)
                 {
-                    lock (instanceLoker)
+                    lock (instanceLocker)
                     {
                         if (instance == null)
                         {
