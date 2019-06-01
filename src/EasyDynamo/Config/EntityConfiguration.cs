@@ -14,7 +14,7 @@ namespace EasyDynamo.Config
         private static volatile EntityConfiguration<TEntity> instance;
         private static readonly object instanceLocker = new object();
 
-        private EntityConfiguration()
+        protected internal EntityConfiguration()
         {
             this.ValidateOnSave = true;
             this.Properties = new List<PropertyConfiguration<TEntity>>();
@@ -25,7 +25,7 @@ namespace EasyDynamo.Config
             this.WriteCapacityUnits = 1;
         }
 
-        internal static EntityConfiguration<TEntity> Instance
+        protected internal static EntityConfiguration<TEntity> Instance
         {
             get
             {
