@@ -6,12 +6,10 @@ namespace EasyDynamo.Builders
     public class PropertyTypeBuilder<TEntity> : IPropertyTypeBuilder
     {
         private readonly PropertyConfiguration<TEntity> configuration;
-        private readonly string memberName;
 
         protected internal PropertyTypeBuilder(PropertyConfiguration<TEntity> configuration)
         {
             this.configuration = configuration;
-            this.memberName = configuration.MemberName;
         }
         
         /// <summary>
