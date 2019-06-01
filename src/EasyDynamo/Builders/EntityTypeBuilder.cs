@@ -19,9 +19,10 @@ namespace EasyDynamo.Builders
         private readonly IDynamoContextOptions contextOptions;
 
         protected internal EntityTypeBuilder(
+            EntityConfiguration<TEntity> entityConfig = null,
             IDynamoContextOptions contextOptions = null)
         {
-            this.entityConfig = EntityConfiguration<TEntity>.Instance;
+            this.entityConfig = entityConfig ?? EntityConfiguration<TEntity>.Instance;
             this.contextOptions = contextOptions ?? DynamoContextOptions.Instance;
         }
 
@@ -47,14 +48,12 @@ namespace EasyDynamo.Builders
         /// <summary>
         /// Adds a table name for a specific entity type.
         /// </summary>
-        /// <exception cref="DynamoContextConfigurationException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public IEntityTypeBuilder<TEntity> HasTable(string tableName)
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new DynamoContextConfigurationException(
-                    $"Parameter cannot be empty: {nameof(tableName)}.");
-            }
+            InputValidator.ThrowIfNullOrWhitespace(
+                tableName, 
+                $"Parameter cannot be empty: {nameof(tableName)}.");
 
             this.entityConfig.TableName = tableName;
             this.contextOptions.UseTableName<TEntity>(tableName);
@@ -65,7 +64,7 @@ namespace EasyDynamo.Builders
         /// <summary>
         /// Adds info for a Global Secondary Index to the configuration.
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public IEntityTypeBuilder<TEntity> HasGlobalSecondaryIndex(
             string indexName,
             Expression<Func<TEntity, object>> hashKeyMemberExpression,
@@ -73,11 +72,8 @@ namespace EasyDynamo.Builders
             long readCapacityUnits = 1,
             long writeCapacityUnits = 1)
         {
-            if (string.IsNullOrWhiteSpace(indexName))
-            {
-                throw new ArgumentException(
-                    $"{nameof(indexName)} cannot be empty.");
-            }
+            InputValidator.ThrowIfAnyNullOrWhitespace(
+                indexName, hashKeyMemberExpression, rangeKeyMemberExpression);
 
             var indexConfig = this.entityConfig
                 .Indexes
@@ -103,6 +99,8 @@ namespace EasyDynamo.Builders
         public IEntityTypeBuilder<TEntity> HasGlobalSecondaryIndex(
             Action<GlobalSecondaryIndexConfiguration> indexAction)
         {
+            InputValidator.ThrowIfNull(indexAction, "indexAction cannot be null.");
+
             var newIndexConfig = new GlobalSecondaryIndexConfiguration();
 
             indexAction(newIndexConfig);
@@ -148,6 +146,8 @@ namespace EasyDynamo.Builders
         public IEntityTypeBuilder<TEntity> HasPrimaryKey(
             Expression<Func<TEntity, object>> keyExpression)
         {
+            InputValidator.ThrowIfNull(keyExpression, "keyExpression cannot be null.");
+
             this.entityConfig.HashKeyMemberExpression = keyExpression;
             this.entityConfig.HashKeyMemberName = keyExpression.TryGetMemberName();
             this.entityConfig.HashKeyMemberType = keyExpression.TryGetMemberType();
@@ -162,6 +162,8 @@ namespace EasyDynamo.Builders
         public IEntityTypeBuilder<TEntity> Ignore(
             Expression<Func<TEntity, object>> propertyExpression)
         {
+            InputValidator.ThrowIfNull(propertyExpression);
+
             var memberName = propertyExpression.TryGetMemberName();
 
             this.entityConfig.IgnoredMembersNames.Add(memberName);
@@ -174,10 +176,10 @@ namespace EasyDynamo.Builders
         /// Ignore that property when save the entity to the database. 
         /// All ignored members will be set to its default value before saving in the database.
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public IEntityTypeBuilder<TEntity> Ignore(string propertyName)
         {
-            InputValidator.ThrowIfAnyNullOrWhitespace(propertyName);
+            InputValidator.ThrowIfNullOrWhitespace(propertyName);
 
             this.entityConfig.IgnoredMembersNames.Add(propertyName);
 
@@ -202,6 +204,8 @@ namespace EasyDynamo.Builders
         public IPropertyTypeBuilder Property<TProperty>(
             Expression<Func<TEntity, TProperty>> propertyExpression)
         {
+            InputValidator.ThrowIfNull(propertyExpression);
+
             var memberName = propertyExpression.TryGetMemberName();
             var propertyConfig = this.entityConfig
                 .Properties
