@@ -13,7 +13,7 @@ namespace EasyDynamo.Extensions
             {
                 return dynamoDBContext.GetTargetTable<T>(operationConfig);
             }
-            catch(System.Exception ex)
+            catch
             {
                 return default(Table);
             }
