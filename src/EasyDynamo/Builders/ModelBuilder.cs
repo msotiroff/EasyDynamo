@@ -34,7 +34,7 @@ namespace EasyDynamo.Builders
             }
         }
 
-        internal IDictionary<Type, IEntityConfiguration> EntityConfigurationByEntityTypes { get; }
+        protected internal IDictionary<Type, IEntityConfiguration> EntityConfigurationByEntityTypes { get; }
 
         /// <summary>
         /// Applies a specific configuration for a given entity.
@@ -48,6 +48,9 @@ namespace EasyDynamo.Builders
             var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
             
             configuration.Configure(entityBuilder);
+
+            this.EntityConfigurationByEntityTypes[typeof(TEntity)] =
+                EntityConfiguration<TEntity>.Instance;
 
             return this;
         }
