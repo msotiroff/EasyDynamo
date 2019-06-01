@@ -4,7 +4,7 @@ namespace EasyDynamo.Config
 {
     public class PropertyConfiguration<TEntity>
     {
-        internal PropertyConfiguration(string memberName)
+        protected internal PropertyConfiguration(string memberName)
         {
             this.MemberName = memberName;
             this.PropertyType = typeof(TEntity).GetProperty(memberName).PropertyType;
