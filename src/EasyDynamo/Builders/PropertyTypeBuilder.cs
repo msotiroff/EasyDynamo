@@ -8,7 +8,7 @@ namespace EasyDynamo.Builders
         private readonly PropertyConfiguration<TEntity> configuration;
         private readonly string memberName;
 
-        internal PropertyTypeBuilder(PropertyConfiguration<TEntity> configuration)
+        protected internal PropertyTypeBuilder(PropertyConfiguration<TEntity> configuration)
         {
             this.configuration = configuration;
             this.memberName = configuration.MemberName;

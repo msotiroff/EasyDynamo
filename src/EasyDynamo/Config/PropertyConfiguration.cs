@@ -2,7 +2,7 @@
 
 namespace EasyDynamo.Config
 {
-    internal class PropertyConfiguration<TEntity>
+    public class PropertyConfiguration<TEntity>
     {
         internal PropertyConfiguration(string memberName)
         {
