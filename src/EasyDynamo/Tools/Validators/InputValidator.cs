@@ -23,11 +23,18 @@ namespace EasyDynamo.Tools.Validators
             throw new ArgumentNullException(errorMessage ?? "Value cannot be empty.");
         }
 
-        public static void ThrowIfAnyNullOrWhitespace(params string[] values)
+        public static void ThrowIfAnyNullOrWhitespace(params object[] values)
         {
             foreach (var value in values)
             {
-                ThrowIfNullOrWhitespace(value);
+                if (value is string)
+                {
+                    ThrowIfNullOrWhitespace(value as string);
+
+                    continue;
+                }
+
+                ThrowIfNull(value);
             }
         }
 
