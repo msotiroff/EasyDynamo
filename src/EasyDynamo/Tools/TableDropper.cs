@@ -28,7 +28,7 @@ namespace EasyDynamo.Tools
                 if (!response.HttpStatusCode.IsSuccessful())
                 {
                     throw new DeleteTableFailedException(
-                        response.ResponseMetadata.Metadata.JoinByNewLine());
+                        response.ResponseMetadata?.Metadata?.JoinByNewLine());
                 }
             }
             catch (Exception ex)
