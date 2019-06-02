@@ -34,6 +34,8 @@ namespace EasyDynamo.Extensions.DependencyInjection
             Action<DynamoContextOptions> optionsExpression)
             where TContext : DynamoContext
         {
+            InputValidator.ThrowIfNull(optionsExpression);
+
             var contextOptions = DynamoContextOptions.Instance;
 
             optionsExpression(contextOptions);
