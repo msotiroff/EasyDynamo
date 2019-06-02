@@ -27,9 +27,9 @@ namespace EasyDynamo.Tools.Extractors
                 ? tableNamesByEntityTypes[typeof(TEntity)]
                 : default(string);
 
-            return fromTableInfo
-                ?? fromEntityConfig
+            return fromEntityConfig
                 ?? fromContextConfig
+                ?? fromTableInfo
                 ?? typeof(TEntity).Name;
         }
 
