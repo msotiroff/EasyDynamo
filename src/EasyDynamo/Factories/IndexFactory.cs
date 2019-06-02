@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.Model;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EasyDynamo.Factories
 {
@@ -11,6 +12,7 @@ namespace EasyDynamo.Factories
         public IEnumerable<GlobalSecondaryIndex> CreateRequestIndexes(
             IEnumerable<GlobalSecondaryIndexConfiguration> indexes)
         {
+            indexes = indexes ?? Enumerable.Empty<GlobalSecondaryIndexConfiguration>();
             var gsis = new List<GlobalSecondaryIndex>();
 
             foreach (var index in indexes)
