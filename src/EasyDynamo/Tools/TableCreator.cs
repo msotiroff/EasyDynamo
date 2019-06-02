@@ -6,6 +6,7 @@ using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions;
+using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,24 +18,26 @@ namespace EasyDynamo.Tools
     public class TableCreator : ITableCreator
     {
         private readonly IAmazonDynamoDB client;
-        private readonly IIndexFactory indexCreator;
+        private readonly IIndexFactory indexFactory;
         private readonly IAttributeDefinitionFactory attributeDefinitionFactory;
         private readonly IIndexConfigurationFactory indexConfigurationFactory;
         
         public TableCreator(
             IAmazonDynamoDB client,
-            IIndexFactory indexCreator,
+            IIndexFactory indexFactory,
             IAttributeDefinitionFactory attributeDefinitionFactory,
             IIndexConfigurationFactory indexConfigurationFactory)
         {
             this.client = client;
-            this.indexCreator = indexCreator;
+            this.indexFactory = indexFactory;
             this.attributeDefinitionFactory = attributeDefinitionFactory;
             this.indexConfigurationFactory = indexConfigurationFactory;
         }
 
         public async Task<string> CreateTableAsync(Type entityType, string tableName)
         {
+            InputValidator.ThrowIfAnyNullOrWhitespace(entityType, tableName);
+
             var configurationsByEntityTypes = ModelBuilder
                 .Instance
                 .EntityConfigurationByEntityTypes;
@@ -51,7 +54,6 @@ namespace EasyDynamo.Tools
                 .GetProperty(hashKeyMember?.Name ?? string.Empty)
                 ?.PropertyType;
             var entityConfigRequired = hashKeyMember == null;
-
             var entityConfig = configurationsByEntityTypes.ContainsKey(entityType)
                 ? configurationsByEntityTypes[entityType]
                 : null;
@@ -93,7 +95,7 @@ namespace EasyDynamo.Tools
                 },
                 GlobalSecondaryIndexes = gsisConfiguration.Count() == 0
                 ? null
-                : this.indexCreator.CreateRequestIndexes(gsisConfiguration).ToList()
+                : this.indexFactory.CreateRequestIndexes(gsisConfiguration).ToList()
             };
 
             try
