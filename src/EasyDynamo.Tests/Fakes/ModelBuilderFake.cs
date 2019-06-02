@@ -9,5 +9,7 @@ namespace EasyDynamo.Tests.Fakes
     {
         public IDictionary<Type, IEntityConfiguration> EntityConfigurationByEntityTypesFromBase
             => base.EntityConfigurationByEntityTypes;
+
+        public static ModelBuilder BaseInstance => Instance;
     }
 }
