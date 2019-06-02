@@ -1,6 +1,7 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
+using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace EasyDynamo.Tools
         public IEnumerable<GlobalSecondaryIndexConfiguration> CreateIndexConfigByAttributes(
             Type entityType)
         {
+            InputValidator.ThrowIfNull(entityType);
+
             var configs = new List<GlobalSecondaryIndexConfiguration>();
 
             var hashAttributesByProperty = entityType
