@@ -17,7 +17,7 @@ namespace EasyDynamo.Config
             this.TableNameByEntityTypes = new Dictionary<Type, string>();
         }
 
-        internal static DynamoContextOptions Instance
+        protected internal static DynamoContextOptions Instance
         {
             get
             {
