@@ -15,6 +15,12 @@ namespace EasyDynamo.Factories
 
             foreach (var index in indexes)
             {
+                if (string.IsNullOrWhiteSpace(index.IndexName) || 
+                    string.IsNullOrWhiteSpace(index.HashKeyMemberName))
+                {
+                    continue;
+                }
+
                 var gsi = new GlobalSecondaryIndex
                 {
                     IndexName = index.IndexName,
