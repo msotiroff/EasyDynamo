@@ -14,14 +14,20 @@ namespace EasyDynamo.Factories
             ScalarAttributeType primaryKeyMemberAttributeType,
             IEnumerable<GlobalSecondaryIndexConfiguration> gsisConfiguration)
         {
-            var definitions = new List<AttributeDefinition>
+            gsisConfiguration = gsisConfiguration 
+                ?? Enumerable.Empty<GlobalSecondaryIndexConfiguration>();
+
+            var definitions = new List<AttributeDefinition>();
+
+            if (!string.IsNullOrWhiteSpace(primaryKeyMemberName) && 
+                primaryKeyMemberAttributeType != null)
+            {
+                definitions.Add(new AttributeDefinition
                 {
-                    new AttributeDefinition
-                    {
-                        AttributeName = primaryKeyMemberName,
-                        AttributeType = primaryKeyMemberAttributeType
-                    }
-                };
+                    AttributeName = primaryKeyMemberName,
+                    AttributeType = primaryKeyMemberAttributeType
+                });
+            }
 
             foreach (var gsiConfig in gsisConfiguration)
             {
