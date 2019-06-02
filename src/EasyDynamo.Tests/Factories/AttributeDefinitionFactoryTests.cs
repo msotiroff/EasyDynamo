@@ -74,9 +74,9 @@ namespace EasyDynamo.Tests.Factories
             };
             var gsiConfigs = new List<GlobalSecondaryIndexConfiguration> { gsiConfig };
             var definitions = this.factory.CreateAttributeDefinitions(null, null, gsiConfigs);
-            
-            Assert.Contains(definitions, d => 
-                d.AttributeName == gsiConfig.HashKeyMemberName && 
+
+            Assert.Contains(definitions, d =>
+                d.AttributeName == gsiConfig.HashKeyMemberName &&
                 d.AttributeType == ScalarAttributeType.S);
         }
 
@@ -107,13 +107,14 @@ namespace EasyDynamo.Tests.Factories
         [InlineData(8, 16)]
         [InlineData(32, 64)]
         [InlineData(200, 400)]
-        public void CreateAttributeDefinitions_GsiConfigurationPassed_CreateCorrectCountOfDefinitions(int gsiConfigsCount, int expectedCount)
+        public void CreateAttributeDefinitions_GsiConfigurationPassed_CreateCorrectCountOfDefinitions(
+            int gsiConfigsCount, int expectedCount)
         {
             var gsiConfigs = Enumerable.Range(1, gsiConfigsCount)
                 .Select(index => new GlobalSecondaryIndexConfiguration
                 {
                     HashKeyMemberName = $"Hash-{index}",
-                    HashKeyMemberType  =typeof(string),
+                    HashKeyMemberType = typeof(string),
                     IndexName = $"Index_{index}",
                     RangeKeyMemberName = $"Range-{index}",
                     RangeKeyMemberType = typeof(int)
