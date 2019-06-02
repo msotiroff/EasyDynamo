@@ -16,7 +16,7 @@ namespace EasyDynamo.Builders
             this.EntityConfigurationByEntityTypes = new Dictionary<Type, IEntityConfiguration>();
         }
         
-        internal static ModelBuilder Instance
+        protected internal static ModelBuilder Instance
         {
             get
             {
