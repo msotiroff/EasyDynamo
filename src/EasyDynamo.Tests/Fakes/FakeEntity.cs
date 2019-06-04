@@ -1,5 +1,6 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace EasyDynamo.Tests.Fakes
 {
@@ -11,12 +12,15 @@ namespace EasyDynamo.Tests.Fakes
 
         [DynamoDBGlobalSecondaryIndexHashKey(IndexName)]
         public string Title { get; set; }
-
+        
         public string Content { get; set; }
 
         [DynamoDBGlobalSecondaryIndexRangeKey(IndexName)]
         public DateTime LastModified { get; set; }
 
         public string IgnoreMe { get; set; }
+
+        [Required]
+        public string PropertyWithRequiredAttribute { get; set; }
     }
 }

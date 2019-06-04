@@ -8,5 +8,7 @@ namespace EasyDynamo.Tests.Fakes
             : base()
         {
         }
+
+        public EntityConfiguration<FakeEntity> BaseInstance = Instance;
     }
 }
