@@ -8,9 +8,5 @@ namespace EasyDynamo.Abstractions
         IEnumerable<ValidationResult> GetValidationResults(TEntity entity);
 
         void Validate(TEntity entity);
-
-        void ValidateByAttributes(TEntity entity);
-
-        void ValidateByConfiguration(TEntity entity);
     }
 }

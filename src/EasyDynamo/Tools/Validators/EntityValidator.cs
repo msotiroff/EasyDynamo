@@ -6,11 +6,10 @@ using EasyDynamo.Extensions;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Reflection;
 
 namespace EasyDynamo.Tools.Validators
 {
-    internal class EntityValidator<TEntity> : IEntityValidator<TEntity> 
+    public class EntityValidator<TEntity> : IEntityValidator<TEntity> 
         where TEntity : class, new()
     {
         private readonly EntityConfiguration<TEntity> entityConfiguration;
@@ -18,6 +17,16 @@ namespace EasyDynamo.Tools.Validators
         public EntityValidator()
         {
             this.entityConfiguration = EntityConfiguration<TEntity>.Instance;
+        }
+
+        public IEnumerable<ValidationResult> GetValidationResults(TEntity entity)
+        {
+            var validationContext = new ValidationContext(entity);
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(
+                entity, validationContext, validationResults, true);
+
+            return validationResults;
         }
 
         public void Validate(TEntity entity)
@@ -29,7 +38,7 @@ namespace EasyDynamo.Tools.Validators
             this.ValidateByAttributes(entity);
         }
 
-        public void ValidateByConfiguration(TEntity entity)
+        private void ValidateByConfiguration(TEntity entity)
         {
             var errors = new List<string>();
 
@@ -65,17 +74,7 @@ namespace EasyDynamo.Tools.Validators
             throw new EntityValidationFailedException(errors.JoinByNewLine());
         }
 
-        public IEnumerable<ValidationResult> GetValidationResults(TEntity entity)
-        {
-            var validationContext = new ValidationContext(entity);
-            var validationResults = new List<ValidationResult>();
-            var isValid = Validator.TryValidateObject(
-                entity, validationContext, validationResults, true);
-
-            return validationResults;
-        }
-
-        public void ValidateByAttributes(TEntity entity)
+        private void ValidateByAttributes(TEntity entity)
         {
             var errors = this.GetValidationResults(entity)
                 .Select(vr => vr.ErrorMessage);
@@ -88,14 +87,17 @@ namespace EasyDynamo.Tools.Validators
 
         private void ValidatePrimaryKey(TEntity entity)
         {
+            var hashKeyType = this.entityConfiguration.HashKeyMemberType;
+            var hashKeyTypeDefaultValue = hashKeyType?.GetDefaultValue();
             var hashKeyFunction = this.entityConfiguration.HashKeyMemberExpression.Compile();
             var hashKeyMember = entity
                 .GetType()
                 .GetProperties()
                 .FirstOrDefault(pi => pi
-                    .GetCustomAttribute<DynamoDBHashKeyAttribute>(true) != null);
-
-            var hashKeyExist = hashKeyFunction(entity) != null || 
+                    .GetCustomAttributes(false)
+                        .Any(attr => attr.GetType() == typeof(DynamoDBHashKeyAttribute)));
+            var hashKeyExist = 
+                (!hashKeyFunction(entity)?.Equals(hashKeyTypeDefaultValue) ?? false) || 
                 hashKeyMember?.GetValue(entity) != null;
 
             if (hashKeyExist)
