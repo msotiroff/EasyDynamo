@@ -44,7 +44,7 @@ namespace EasyDynamo.Config
             }
         }
 
-        internal ICollection<PropertyConfiguration<TEntity>> Properties { get; }
+        public ICollection<PropertyConfiguration<TEntity>> Properties { get; }
 
         public string TableName { get; set; }
 
