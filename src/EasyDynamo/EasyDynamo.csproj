@@ -10,9 +10,11 @@
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Mihail Sotirov</Authors>
-    <PackageReleaseNotes>Target framework switched to the less restrictive .Net Standard 2.0 instead of .NET Core.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added method to choose dynamo entry convertion version or using a custom one.</PackageReleaseNotes>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
