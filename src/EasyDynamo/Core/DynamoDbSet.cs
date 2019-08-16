@@ -21,7 +21,6 @@ namespace EasyDynamo.Core
         private readonly DynamoDBOperationConfig operationConfig;
         private readonly EntityConfiguration<TEntity> entityConfig;
         private readonly Table table;
-
         private readonly IIndexExtractor indexExtractor;
         private readonly ITableNameExtractor tableNameExtractor;
         private readonly IPrimaryKeyExtractor primaryKeyExtractor;
@@ -45,19 +44,26 @@ namespace EasyDynamo.Core
             this.entityConfig = EntityConfiguration<TEntity>.Instance;
             this.operationConfig = new DynamoDBOperationConfig
             {
-                OverrideTableName = tableNameExtractor.ExtractTableName<TEntity>(this.table)
+                OverrideTableName = this.tableNameExtractor.ExtractTableName<TEntity>(this.table)
             };
         }
 
         /// <summary>
         /// Provides an access to Amazon.DynamoDBv2.DataModel.IDynamoDBContext instance.
+        /// IMPORTANT: When use it always specify the table name by the TableName property.
         /// </summary>
         public IDynamoDBContext Base { get; }
 
         /// <summary>
         /// Provides an access to Amazon.DynamoDBv2.IAmazonDynamoDB instance.
+        /// IMPORTANT: When use it always specify the table name by the TableName property.
         /// </summary>
         public IAmazonDynamoDB Client { get; }
+
+        /// <summary>
+        /// Provides the current entity's table name.
+        /// </summary>
+        public string TableName => this.operationConfig.OverrideTableName;
 
         /// <summary>
         /// Adds the given entity to the table.
@@ -222,12 +228,12 @@ namespace EasyDynamo.Core
             InputValidator.ThrowIfAnyNull(propertyExpression, value);
 
             var memberName = propertyExpression.TryGetMemberName();
-            var currentOperationConfig = this.operationConfig.Clone();
+            var currentoperationConfig = this.operationConfig.Clone();
             var indexName = this.indexExtractor.ExtractIndex<TEntity>(memberName, this.table);
 
             if (!string.IsNullOrWhiteSpace(indexName))
             {
-                currentOperationConfig.IndexName = indexName;
+                currentoperationConfig.IndexName = indexName;
             }
 
             var conditions = new List<ScanCondition>
@@ -235,7 +241,7 @@ namespace EasyDynamo.Core
                 new ScanCondition(memberName, scanOperator, value)
             };
 
-            var asyncScan = this.Base.ScanAsync<TEntity>(conditions, currentOperationConfig);
+            var asyncScan = this.Base.ScanAsync<TEntity>(conditions, currentoperationConfig);
 
             return await asyncScan.GetRemainingAsync();
         }
