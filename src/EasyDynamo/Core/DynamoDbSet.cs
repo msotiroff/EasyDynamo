@@ -22,7 +22,6 @@ namespace EasyDynamo.Core
         private readonly EntityConfiguration<TEntity> entityConfig;
         private readonly Table table;
 
-        private readonly IAmazonDynamoDB client;
         private readonly IIndexExtractor indexExtractor;
         private readonly ITableNameExtractor tableNameExtractor;
         private readonly IPrimaryKeyExtractor primaryKeyExtractor;
@@ -36,7 +35,7 @@ namespace EasyDynamo.Core
             IPrimaryKeyExtractor primaryKeyExtractor,
             IEntityValidator<TEntity> validator)
         {
-            this.client = client;
+            this.Client = client;
             this.Base = dbContext;
             this.indexExtractor = indexExtractor;
             this.tableNameExtractor = tableNameExtractor;
@@ -50,7 +49,15 @@ namespace EasyDynamo.Core
             };
         }
 
+        /// <summary>
+        /// Provides an access to Amazon.DynamoDBv2.DataModel.IDynamoDBContext instance.
+        /// </summary>
         public IDynamoDBContext Base { get; }
+
+        /// <summary>
+        /// Provides an access to Amazon.DynamoDBv2.IAmazonDynamoDB instance.
+        /// </summary>
+        public IAmazonDynamoDB Client { get; }
 
         /// <summary>
         /// Adds the given entity to the table.
