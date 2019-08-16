@@ -1,4 +1,5 @@
 ﻿using Amazon;
+using Amazon.DynamoDBv2;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
@@ -119,6 +120,16 @@ namespace EasyDynamo.Builders
                 region, $"{nameof(region)} must be provided.");
 
             this.options.RegionEndpoint = region;
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a schema fully supporting 2014 L, M, BOOL, NULL additions.
+        /// </summary>
+        public DynamoContextOptionsBuilder UseEntryConversionV2()
+        {
+            this.options.Conversion = DynamoDBEntryConversion.V2;
 
             return this;
         }

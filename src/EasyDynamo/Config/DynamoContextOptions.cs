@@ -1,4 +1,5 @@
 ﻿using Amazon;
+using Amazon.DynamoDBv2;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Tools.Validators;
@@ -49,6 +50,8 @@ namespace EasyDynamo.Config
         public RegionEndpoint RegionEndpoint { get; set; }
 
         public string Profile { get; set; }
+
+        public DynamoDBEntryConversion Conversion { get; set; }
 
         protected internal void ValidateLocalMode()
         {

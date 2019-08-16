@@ -1,4 +1,5 @@
 ﻿using Amazon;
+using Amazon.DynamoDBv2;
 
 namespace EasyDynamo.Abstractions
 {
@@ -15,6 +16,8 @@ namespace EasyDynamo.Abstractions
         string SecretAccessKey { get; set; }
 
         string ServiceUrl { get; set; }
+
+        DynamoDBEntryConversion Conversion { get; set; }
 
         void UseTableName<TEntity>(string tableName) where TEntity : class, new();
     }

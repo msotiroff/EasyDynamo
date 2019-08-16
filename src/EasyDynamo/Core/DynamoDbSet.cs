@@ -20,6 +20,7 @@ namespace EasyDynamo.Core
     {
         private readonly DynamoDBOperationConfig operationConfig;
         private readonly EntityConfiguration<TEntity> entityConfig;
+        private readonly IDynamoContextOptions contextOptions;
         private readonly Table table;
         private readonly IIndexExtractor indexExtractor;
         private readonly ITableNameExtractor tableNameExtractor;
@@ -42,9 +43,11 @@ namespace EasyDynamo.Core
             this.validator = validator;
             this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
             this.entityConfig = EntityConfiguration<TEntity>.Instance;
+            this.contextOptions = DynamoContextOptions.Instance;
             this.operationConfig = new DynamoDBOperationConfig
             {
-                OverrideTableName = this.tableNameExtractor.ExtractTableName<TEntity>(this.table)
+                OverrideTableName = this.tableNameExtractor.ExtractTableName<TEntity>(this.table),
+                Conversion = this.contextOptions.Conversion ?? DynamoDBEntryConversion.V1
             };
         }
 
