@@ -479,8 +479,8 @@ public async Task<IEnumerable<Article>> GetAllAsync()
 }
 ```
 
-### How to extend and use you own db sets.
-You may extensd the default implementation of IDynamoDbSet like that:
+### How to extend and use you own DynamoDbSets.
+You may extend the default implementation of IDynamoDbSet like that:
 #### 1. Create your own implementation:
 ```
 public class ExtendedDynamoDbSet<TEntity> : DynamoDbSet<TEntity>, IExtendedDynamoDbSet 
