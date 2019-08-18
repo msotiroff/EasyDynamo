@@ -10,11 +10,11 @@
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Authors>Mihail Sotirov</Authors>
-    <PackageReleaseNotes>Added method to choose dynamo entry convertion version or using a custom one.</PackageReleaseNotes>
-    <AssemblyVersion>1.0.4.0</AssemblyVersion>
-    <FileVersion>1.0.4.0</FileVersion>
+    <PackageReleaseNotes>Added an abstraction for DynamoDbSet&lt;T&gt; in order to be easily mocked.</PackageReleaseNotes>
+    <AssemblyVersion>1.0.5.0</AssemblyVersion>
+    <FileVersion>1.0.5.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

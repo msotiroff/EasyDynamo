@@ -4,7 +4,7 @@
 
 ------------
 
-EasyDynamo is a small library built using .Net Core 2.1 that helps developers to access and configure DynamoDB easier. Different configurations can be applied for different environments (development, staging, production) as well as using a local dynamo instance for non production environment. Supports creating dynamo tables correspondings to your models using code first aproach.
+EasyDynamo is a small library that helps developers to access and configure DynamoDB easier. Different configurations can be applied for different environments (development, staging, production) as well as using a local dynamo instance for non production environment. Supports creating dynamo tables correspondings to your models using code first aproach.
 
 ### Installation:
 You can install this library using NuGet into your project.
@@ -68,9 +68,9 @@ public class BlogDbContext : DynamoContext
     public BlogDbContext(IServiceProvider serviceProvider)
       : base(serviceProvider) { }
 
-   public DynamoDbSet<User> Users { get; set; }
+   public IDynamoDbSet<User> Users { get; set; }
 
-   public DynamoDbSet<Article> Articles { get; set; }
+   public IDynamoDbSet<Article> Articles { get; set; }
 }
 ```
 
@@ -94,6 +94,7 @@ services.AddDynamoContext<BlogDbContext>(this.Configuration, options =>
       options.RegionEndpoint = RegionEndpoint.USEast1;
       options.AccessKeyId = Environment.GetEnvironmentVariable("AccessKey");
       options.SecretAccessKey = this.Configuration.GetValue<string>("Credentials:SecretKey");
+	  options.Conversion = DynamoDBEntryConversion.V2;
    });
 ```
 
@@ -116,6 +117,7 @@ public class BlogDbContext : DynamoContext
         builder.UseAccessKeyId(Environment.GetEnvironmentVariable("AccessKey"));
         builder.UseSecretAccessKey(configuration.GetValue<string>("AWS:Credentials:SecretKey"));
         builder.UseRegionEndpoint(RegionEndpoint.USEast1);
+		builder.UseEntryConversionV2();
 
         base.OnConfiguring(builder, configuration);
     }
@@ -474,5 +476,52 @@ public async Task<IEnumerable<Article>> GetAllAsync()
     await batchGet.ExecuteAsync();
 
     return batchGet.Results;
+}
+```
+
+### How to extend and use you own db sets.
+You may extensd the default implementation of IDynamoDbSet like that:
+#### 1. Create your own implementation:
+```
+public class ExtendedDynamoDbSet<TEntity> : DynamoDbSet<TEntity>, IExtendedDynamoDbSet 
+    where TEntity : class, new()
+{
+    public ExtendedDynamoDbSet(
+        IAmazonDynamoDB client,
+        IDynamoDBContext dbContext,
+        IIndexExtractor indexExtractor,
+        ITableNameExtractor tableNameExtractor,
+        IPrimaryKeyExtractor primaryKeyExtractor,
+        IEntityValidator<TEntity> validator)
+        : base(client,
+              dbContext,
+              indexExtractor,
+              tableNameExtractor,
+              primaryKeyExtractor,
+              validator)
+    {
+    }
+
+    public async Task<ListBackupsResponse> GetBackupsAsync()
+    {
+        var request = new ListBackupsRequest
+        {
+            BackupType = BackupTypeFilter.ALL,
+            TableName = base.TableName
+        };
+
+        return await base.Client.ListBackupsAsync(request);
+    }
+}
+```
+#### 2. Add the specific custom sets to the DI container.
+```
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddDynamoContext<BlogDbContext>(this.Configuration);
+
+    services.AddTransient<IDynamoDbSet<User>, ExtendedDynamoDbSet<User>>();
+
+    services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 }
 ```
