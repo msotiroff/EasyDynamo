@@ -2,7 +2,6 @@
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using EasyDynamo.Abstractions;
-using EasyDynamo.Attributes;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions;
@@ -15,8 +14,7 @@ using System.Threading.Tasks;
 
 namespace EasyDynamo.Core
 {
-    [DynamoDbSet]
-    public class DynamoDbSet<TEntity> where TEntity : class, new()
+    public class DynamoDbSet<TEntity> : IDynamoDbSet<TEntity> where TEntity : class, new()
     {
         private readonly DynamoDBOperationConfig operationConfig;
         private readonly EntityConfiguration<TEntity> entityConfig;
@@ -82,7 +80,7 @@ namespace EasyDynamo.Core
 
             await this.ExecuteBatchWriteAsync(entity);
         }
-        
+
         /// <summary>
         /// Adds (if not exist) or updates (if exist) the given entity.
         /// </summary>
@@ -189,7 +187,7 @@ namespace EasyDynamo.Core
 
             return entity;
         }
-        
+
         /// <summary>
         /// Filters the items in a table by given predicate.
         /// Warning: Can be a very slow operation when using over a big table.
@@ -224,8 +222,8 @@ namespace EasyDynamo.Core
         /// The value that should be matched by the filter over the given property.
         /// </param>
         public async Task<IEnumerable<TEntity>> FilterAsync<TProperty>(
-            Expression<Func<TEntity, TProperty>> propertyExpression, 
-            ScanOperator scanOperator, 
+            Expression<Func<TEntity, TProperty>> propertyExpression,
+            ScanOperator scanOperator,
             TProperty value)
         {
             InputValidator.ThrowIfAnyNull(propertyExpression, value);
@@ -319,7 +317,7 @@ namespace EasyDynamo.Core
 
             await this.Base.SaveAsync(entity, this.operationConfig);
         }
-        
+
         /// <summary>
         /// Removes the given entity.
         /// </summary>
@@ -341,7 +339,7 @@ namespace EasyDynamo.Core
 
             await this.Base.DeleteAsync(entity, this.operationConfig);
         }
-        
+
         private async Task ExecuteBatchWriteAsync(params TEntity[] entities)
         {
             var batchWrite = this.Base.CreateBatchWrite<TEntity>(this.operationConfig);

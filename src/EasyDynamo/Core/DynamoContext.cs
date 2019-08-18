@@ -70,6 +70,13 @@ namespace EasyDynamo.Core
                 throw new InvalidOperationException($"{propertyType} is not a generic type.");
             }
 
+            var instance = this.serviceProvider.GetService(propertyType);
+
+            if (instance != null)
+            {
+                return instance;
+            }
+
             var constructor = propertyType
                 .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
                 .Single();
@@ -78,9 +85,16 @@ namespace EasyDynamo.Core
                 .Select(pi => pi.ParameterType)
                 .Select(t => this.serviceProvider.GetRequiredService(t))
                 .ToArray();
-            var instance = constructor.Invoke(constructorParams);
 
-            return instance;
+            instance = constructor.Invoke(constructorParams);
+
+            if (instance != null)
+            {
+                return instance;
+            }
+
+            throw new InvalidOperationException(
+                $"{propertyType.FullName} could not be instantiated.");
         }
 
         private void ListAllTablesByDbSets()

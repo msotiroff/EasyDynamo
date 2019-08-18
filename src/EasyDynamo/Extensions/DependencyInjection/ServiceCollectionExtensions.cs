@@ -72,7 +72,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
             BuildConfiguration(contextInstance, configuration);
 
             services.AddSingleton<TContext>();
-
+            services.AddSingleton(typeof(IDynamoDbSet<>), typeof(DynamoDbSet<>));
             services.AddSingleton<IDynamoDBContext>(
                 sp => new DynamoDBContext(sp.GetRequiredService<IAmazonDynamoDB>()));
 
