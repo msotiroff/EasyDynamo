@@ -2,6 +2,7 @@
 using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Tests.Fakes;
+using Moq;
 using System;
 using Xunit;
 
@@ -9,11 +10,13 @@ namespace EasyDynamo.Tests.Builders
 {
     public class ModelBuilderTests
     {
+        private readonly Mock<IDynamoContextOptions> optionsMock;
         private readonly ModelBuilderFake builder;
 
         public ModelBuilderTests()
         {
-            this.builder = new ModelBuilderFake();
+            this.optionsMock = new Mock<IDynamoContextOptions>();
+            this.builder = new ModelBuilderFake(optionsMock.Object);
         }
 
         [Fact]
@@ -40,7 +43,9 @@ namespace EasyDynamo.Tests.Builders
 
             this.builder.ApplyConfiguration(configuration);
 
-            Assert.Equal(typeof(EntityTypeBuilder<FakeEntity>), configuration.ConfigureInvokedWithBuilderType);
+            Assert.Equal(
+                typeof(EntityTypeBuilder<FakeDynamoContext, FakeEntity>), 
+                configuration.ConfigureInvokedWithBuilderType);
         }
 
         [Fact]
@@ -58,7 +63,9 @@ namespace EasyDynamo.Tests.Builders
         {
             var entBuilder = this.builder.Entity<FakeEntity>();
 
-            Assert.Equal(typeof(EntityTypeBuilder<FakeEntity>), entBuilder.GetType());
+            Assert.Equal(
+                typeof(EntityTypeBuilder<FakeDynamoContext, FakeEntity>), 
+                entBuilder.GetType());
         }
 
         [Fact]
@@ -66,26 +73,26 @@ namespace EasyDynamo.Tests.Builders
         {
             this.builder.Entity<FakeEntity>();
 
-            Assert.Single(this.builder.EntityConfigurationByEntityTypesFromBase);
+            Assert.Single(this.builder.EntityConfigurationsFromBase);
             Assert.Contains(
-                this.builder.EntityConfigurationByEntityTypesFromBase,
+                this.builder.EntityConfigurationsFromBase,
                 kvp => kvp.Key == typeof(FakeEntity));
             Assert.Contains(
-                this.builder.EntityConfigurationByEntityTypesFromBase,
-                kvp => kvp.Value.GetType() == typeof(EntityConfiguration<FakeEntity>));
+                this.builder.EntityConfigurationsFromBase,
+                kvp => kvp.Value.GetType() == typeof(EntityConfiguration<FakeDynamoContext, FakeEntity>));
         }
 
         [Fact]
         public void Entity_BuildActionIsNull_ThrowsException()
         {
             Assert.Throws<ArgumentNullException>(
-                () => this.builder.Entity(default(Action<IEntityTypeBuilder<FakeEntity>>)));
+                () => this.builder.Entity(default(Action<IEntityTypeBuilder<FakeDynamoContext, FakeEntity>>)));
         }
 
         [Fact]
         public void Entity_ValidBuildAction_InvokeAction()
         {
-            Action<IEntityTypeBuilder<FakeEntity>> buildAction = e => 
+            Action<IEntityTypeBuilder<FakeDynamoContext, FakeEntity>> buildAction = e => 
             {
                 e.HasPrimaryKey(ent => ent.Id);
             };
@@ -98,7 +105,7 @@ namespace EasyDynamo.Tests.Builders
         [Fact]
         public void Entity_ValidBuildAction_ReturnsSameInstanceOfBuilder()
         {
-            Action<IEntityTypeBuilder<FakeEntity>> buildAction = e =>
+            Action<IEntityTypeBuilder<FakeDynamoContext, FakeEntity>> buildAction = e =>
             {
                 e.HasPrimaryKey(ent => ent.Id);
             };

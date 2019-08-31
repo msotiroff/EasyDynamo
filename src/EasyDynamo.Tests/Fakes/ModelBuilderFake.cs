@@ -5,11 +5,14 @@ using System.Collections.Generic;
 
 namespace EasyDynamo.Tests.Fakes
 {
-    public class ModelBuilderFake : ModelBuilder
+    public class ModelBuilderFake : ModelBuilder<FakeDynamoContext>
     {
-        public IDictionary<Type, IEntityConfiguration> EntityConfigurationByEntityTypesFromBase
-            => base.EntityConfigurationByEntityTypes;
+        protected internal ModelBuilderFake(IDynamoContextOptions contextOptions) 
+            : base(contextOptions)
+        {
+        }
 
-        public static ModelBuilder BaseInstance => Instance;
+        public IDictionary<Type, IEntityConfiguration> EntityConfigurationsFromBase 
+            => base.EntityConfigurations;
     }
 }

@@ -12,7 +12,7 @@ namespace EasyDynamo.Tests.Config
 
         public DynamoContextOptionsTests()
         {
-            this.options = new DynamoContextOptionsFake
+            this.options = new DynamoContextOptionsFake(typeof(FakeDynamoContext))
             {
                 ServiceUrl = "http://localhost:8000",
                 AccessKeyId = Guid.NewGuid().ToString(),

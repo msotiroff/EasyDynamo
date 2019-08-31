@@ -6,10 +6,13 @@ namespace EasyDynamo.Tests.Fakes
 {
     public class DynamoContextOptionsFake : DynamoContextOptions
     {
+        protected internal DynamoContextOptionsFake(Type contextType) 
+            : base(contextType)
+        {
+        }
+
         public IDictionary<Type, string> TableNameByEntityTypesFromBase
             => base.TableNameByEntityTypes;
-
-        public static DynamoContextOptions BaseInstance => Instance;
 
         protected internal void ValidateCloudModeFromBase()
         {

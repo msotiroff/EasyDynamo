@@ -1,22 +1,30 @@
-﻿using EasyDynamo.Config;
+﻿using EasyDynamo.Abstractions;
+using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Tests.Fakes;
 using EasyDynamo.Tools.Validators;
+using Moq;
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace EasyDynamo.Tests.Tools.Validators
 {
     public class EntityValidatorTests
     {
-        private readonly EntityValidator<FakeEntity> validator;
-        private readonly EntityConfiguration<FakeEntity> entityConfig;
+        private readonly EntityValidator validator;
+        private readonly Mock<IEntityConfiguration<FakeEntity>> entityConfigMock;
+        private readonly Mock<IEntityConfigurationProvider> entityConfigurationProviderMock;
 
         public EntityValidatorTests()
         {
-            this.entityConfig = new EntityConfigurationFake().BaseInstance;
-            this.validator = new EntityValidator<FakeEntity>();
-            this.entityConfig.HashKeyMemberExpression = e => e.Id;
-            this.entityConfig.HashKeyMemberType = typeof(int);
+            this.entityConfigurationProviderMock = new Mock<IEntityConfigurationProvider>();
+            this.entityConfigMock = new Mock<IEntityConfiguration<FakeEntity>>();
+            this.validator = new EntityValidator(this.entityConfigurationProviderMock.Object);
+
+            this.entityConfigurationProviderMock
+                .Setup(p => p.GetEntityConfiguration(It.IsAny<Type>(), It.IsAny<Type>()))
+                .Returns(this.entityConfigMock.Object);
         }
 
         [Fact]
@@ -25,16 +33,20 @@ namespace EasyDynamo.Tests.Tools.Validators
             var entity = new FakeEntity();
 
             Assert.Throws<EntityValidationFailedException>(
-                () => this.validator.Validate(entity));
+                () => this.validator.Validate(typeof(FakeDynamoContext), entity));
         }
 
         [Fact]
         public void Validate_HasPrimaryKeyRequiredMemberIsNull_ThrowsException()
         {
-            this.entityConfig.Properties.Add(
-                new PropertyConfiguration<FakeEntity>(nameof(FakeEntity.Content))
+            this.entityConfigMock
+                .SetupGet(c => c.Properties)
+                .Returns(new List<PropertyConfiguration<FakeEntity>>
                 {
-                    IsRequired = true
+                    new PropertyConfiguration<FakeEntity>(nameof(FakeEntity.Content))
+                    {
+                        IsRequired = true
+                    }
                 });
 
             var entity = new FakeEntity
@@ -43,7 +55,7 @@ namespace EasyDynamo.Tests.Tools.Validators
             };
 
             Assert.Throws<EntityValidationFailedException>(
-                () => this.validator.Validate(entity));
+                () => this.validator.Validate(typeof(FakeDynamoContext), entity));
         }
 
         [Fact]
@@ -55,7 +67,7 @@ namespace EasyDynamo.Tests.Tools.Validators
             };
 
             Assert.Throws<EntityValidationFailedException>(
-                () => this.validator.Validate(entity));
+                () => this.validator.Validate(typeof(FakeDynamoContext), entity));
         }
     }
 }

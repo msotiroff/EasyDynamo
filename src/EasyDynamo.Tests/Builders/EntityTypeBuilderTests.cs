@@ -4,7 +4,6 @@ using EasyDynamo.Config;
 using EasyDynamo.Tests.Fakes;
 using Moq;
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 using Xunit;
 
@@ -15,7 +14,7 @@ namespace EasyDynamo.Tests.Builders
         private const string SampleIndexName = "GSI_Articles_Title_LastModified";
         
         private readonly Mock<IDynamoContextOptions> contextOptionsMock;
-        private readonly EntityConfiguration<FakeEntity> entityConfig;
+        private readonly EntityConfiguration<FakeDynamoContext, FakeEntity> entityConfig;
         private readonly EntityTypeBuilderFake builder;
 
         public EntityTypeBuilderTests()

@@ -4,10 +4,10 @@ using EasyDynamo.Config;
 
 namespace EasyDynamo.Tests.Fakes
 {
-    public class EntityTypeBuilderFake : EntityTypeBuilder<FakeEntity>
+    public class EntityTypeBuilderFake : EntityTypeBuilder<FakeDynamoContext, FakeEntity>
     {
         protected internal EntityTypeBuilderFake(
-            EntityConfiguration<FakeEntity> entityConfig, 
+            EntityConfiguration<FakeDynamoContext, FakeEntity> entityConfig, 
             IDynamoContextOptions contextOptions) : base(entityConfig, contextOptions)
         {
         }

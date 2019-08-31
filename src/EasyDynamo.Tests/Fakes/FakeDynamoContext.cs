@@ -1,7 +1,7 @@
-﻿using System;
-using EasyDynamo.Builders;
+﻿using EasyDynamo.Builders;
 using EasyDynamo.Core;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace EasyDynamo.Tests.Fakes
 {
@@ -24,8 +24,8 @@ namespace EasyDynamo.Tests.Fakes
             base.OnConfiguring(builder, configuration);
         }
 
-        protected override void OnModelCreating(
-            ModelBuilder builder, IConfiguration configuration)
+        protected override void OnModelCreating<FakeDynamoContext>(
+            ModelBuilder<FakeDynamoContext> builder, IConfiguration configuration)
         {
             OnModelCreatingInvoked = true;
 

@@ -2,6 +2,7 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Extensions.NETCore.Setup;
+using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions.DependencyInjection;
@@ -17,13 +18,13 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
 {
     public class ServiceCollectionExtensionsTests
     {
-        private readonly DynamoContextOptions contextOptions;
+        private readonly Mock<IDynamoContextOptions> contextOptionsMock;
         private readonly Mock<IConfiguration> configurationMock;
         private readonly IServiceCollection services;
 
         public ServiceCollectionExtensionsTests()
         {
-            this.contextOptions = DynamoContextOptionsFake.BaseInstance;
+            this.contextOptionsMock = new Mock<IDynamoContextOptions>();
             this.configurationMock = new Mock<IConfiguration>();
             this.services = new ServiceCollection();
         }
@@ -33,12 +34,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_AddsAwsOptionsToServiceProvider()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
 
                 var serviceProvider = this.services.BuildServiceProvider();
@@ -49,30 +56,20 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         }
 
         [Fact]
-        public async Task AddDynamoContext_ContextAddedTwice_ThrowsException()
-        {
-            await TestRetrier.RetryAsync(() =>
-            {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
-                services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
-
-                Assert.Throws<DynamoContextConfigurationException>(
-                        () => this.services.AddDynamoContext<FakeDynamoContext>(
-                            this.configurationMock.Object));
-            });
-        }
-
-        [Fact]
         public async Task AddDynamoContext_InvokesOnConfiguring()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
                 FakeDynamoContext.OnConfiguringInvoked = false;
 
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
@@ -84,11 +81,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_InvokesOnModelCreating()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
                 FakeDynamoContext.OnModelCreatingInvoked = false;
 
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
@@ -100,12 +104,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_AddsContextToServicesAsSingleton()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
 
                 Assert.Contains(this.services, s =>
@@ -117,12 +127,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_AddsDynamoContextToServicesAsSingleton()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
 
                 Assert.Contains(this.services, s =>
@@ -135,12 +151,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_CloudMode_AddsDynamoClientToServices()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = false;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
 
                 Assert.Contains(this.services, s =>
@@ -152,12 +174,18 @@ namespace EasyDynamo.Tests.Extensions.DependencyInjection
         [Fact]
         public async Task AddDynamoContext_LocalMode_AddsDynamoClientToServices()
         {
+            this.contextOptionsMock
+                .SetupGet(o => o.Profile)
+                .Returns("ApplicationDevelopment");
+            this.contextOptionsMock
+                .SetupGet(o => o.LocalMode)
+                .Returns(false);
+            this.contextOptionsMock
+                .SetupGet(o => o.RegionEndpoint)
+                .Returns(RegionEndpoint.APNortheast1);
+
             await TestRetrier.RetryAsync(() =>
             {
-                this.contextOptions.Profile = "ApplicationDevelopment";
-                this.contextOptions.LocalMode = true;
-                this.contextOptions.RegionEndpoint = RegionEndpoint.APNortheast1;
-
                 services.AddDynamoContext<FakeDynamoContext>(this.configurationMock.Object);
 
                 Assert.Contains(this.services, s =>

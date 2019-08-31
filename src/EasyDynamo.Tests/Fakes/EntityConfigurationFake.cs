@@ -2,13 +2,11 @@
 
 namespace EasyDynamo.Tests.Fakes
 {
-    public class EntityConfigurationFake : EntityConfiguration<FakeEntity>
+    public class EntityConfigurationFake : EntityConfiguration<FakeDynamoContext, FakeEntity>
     {
         public EntityConfigurationFake() 
             : base()
         {
         }
-
-        public EntityConfiguration<FakeEntity> BaseInstance = Instance;
     }
 }

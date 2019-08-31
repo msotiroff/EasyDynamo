@@ -23,8 +23,10 @@ namespace EasyDynamo.Tests.Tools
         private readonly Mock<IIndexFactory> indexFactoryMock;
         private readonly Mock<IAttributeDefinitionFactory> attributeDefinitionFactoryMock;
         private readonly Mock<IIndexConfigurationFactory> indexConfigurationFactoryMock;
+        private readonly Mock<IEntityConfigurationProvider> entityConfigurationProviderMock;
+        private readonly Mock<IDynamoContextOptions> dynamoContextOptionsMock;
         private readonly TableCreator creator;
-        private readonly ModelBuilder modelBuilder;
+        private readonly ModelBuilder<FakeDynamoContext> modelBuilder;
 
         public TableCreatorTests()
         {
@@ -32,19 +34,23 @@ namespace EasyDynamo.Tests.Tools
             this.indexFactoryMock = new Mock<IIndexFactory>();
             this.attributeDefinitionFactoryMock = new Mock<IAttributeDefinitionFactory>();
             this.indexConfigurationFactoryMock = new Mock<IIndexConfigurationFactory>();
+            this.entityConfigurationProviderMock = new Mock<IEntityConfigurationProvider>();
+            this.dynamoContextOptionsMock = new Mock<IDynamoContextOptions>();
             this.creator = new TableCreator(
                 this.clientMock.Object,
                 this.indexFactoryMock.Object,
                 this.attributeDefinitionFactoryMock.Object,
-                this.indexConfigurationFactoryMock.Object);
-            this.modelBuilder = ModelBuilderFake.BaseInstance;
+                this.indexConfigurationFactoryMock.Object,
+                this.entityConfigurationProviderMock.Object);
+            this.modelBuilder = new ModelBuilderFake(this.dynamoContextOptionsMock.Object);
         }
 
         [Fact]
         public async Task CreateTableAsync_EntityTypeIsNull_ThrowsException()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
-                    () => this.creator.CreateTableAsync(null, TableName));
+                    () => this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), null, TableName));
         }
 
         [Theory]
@@ -54,7 +60,8 @@ namespace EasyDynamo.Tests.Tools
         public async Task CreateTableAsync_TableNameIsEmpty_ThrowsException(string empty)
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
-                    () => this.creator.CreateTableAsync(typeof(FakeEntity), empty));
+                    () => this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), typeof(FakeEntity), empty));
         }
 
         [Fact]
@@ -76,7 +83,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                var result = await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                var result = await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 Assert.Equal(TableName, result);
             });
@@ -88,7 +96,8 @@ namespace EasyDynamo.Tests.Tools
             await TestRetrier.RetryAsync(async () =>
             {
                 await Assert.ThrowsAsync<DynamoContextConfigurationException>(
-                    () => this.creator.CreateTableAsync(typeof(FakeEntity), TableName));
+                    () => this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), typeof(FakeEntity), TableName));
             });
         }
 
@@ -104,7 +113,8 @@ namespace EasyDynamo.Tests.Tools
 
                 try
                 {
-                    await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                    await this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
                 }
                 catch (Exception ex)
                 {
@@ -134,7 +144,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -171,7 +182,8 @@ namespace EasyDynamo.Tests.Tools
                         It.IsAny<IEnumerable<GlobalSecondaryIndexConfiguration>>()))
                     .Returns(definitions);
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -199,7 +211,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -229,7 +242,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -261,7 +275,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -291,7 +306,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -323,7 +339,8 @@ namespace EasyDynamo.Tests.Tools
                         HttpStatusCode = System.Net.HttpStatusCode.OK
                     });
 
-                await this.creator.CreateTableAsync(typeof(FakeEntity), TableName);
+                await this.creator.CreateTableAsync(
+                    typeof(FakeDynamoContext), typeof(FakeEntity), TableName);
 
                 this.clientMock
                     .Verify(cli => cli.CreateTableAsync(
@@ -354,7 +371,8 @@ namespace EasyDynamo.Tests.Tools
                     });
 
                 await Assert.ThrowsAsync<DynamoContextConfigurationException>(
-                    () => this.creator.CreateTableAsync(typeof(FakeEntity), TableName));
+                    () => this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), typeof(FakeEntity), TableName));
             });
         }
 
@@ -375,7 +393,8 @@ namespace EasyDynamo.Tests.Tools
                     .ThrowsAsync(new InvalidOperationException());
 
                 await Assert.ThrowsAsync<DynamoContextConfigurationException>(
-                    () => this.creator.CreateTableAsync(typeof(FakeEntity), TableName));
+                    () => this.creator.CreateTableAsync(
+                        typeof(FakeDynamoContext), typeof(FakeEntity), TableName));
             });
         }
     }
