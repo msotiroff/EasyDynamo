@@ -1,5 +1,4 @@
 ﻿using EasyDynamo.Abstractions;
-using EasyDynamo.Config;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace EasyDynamo.Core
 {
     public class DatabaseFacade
     {
-        private readonly DynamoContextOptions options;
+        private readonly IDynamoContextOptions options;
         private readonly ITableNameExtractor tableNameExtractor;
         private readonly ITableCreator tableCreator;
         private readonly ITableDropper tableDropper;
@@ -18,9 +17,11 @@ namespace EasyDynamo.Core
         public DatabaseFacade(
             ITableNameExtractor tableNameExtractor, 
             ITableCreator tableCreator, 
-            ITableDropper tableDropper)
+            ITableDropper tableDropper,
+            IDynamoContextOptionsProvider optionsProvider,
+            Type contextType)
         {
-            this.options = DynamoContextOptions.Instance;
+            this.options = optionsProvider.GetContextOptions(contextType);
             this.tableNameExtractor = tableNameExtractor;
             this.tableCreator = tableCreator;
             this.tableDropper = tableDropper;
@@ -31,7 +32,7 @@ namespace EasyDynamo.Core
         /// DynamoDbSet in the application's DynamoContext class.
         /// </summary>
         public async Task EnsureCreatedAsync(
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             await Task.Run(async () =>
             {
@@ -48,7 +49,7 @@ namespace EasyDynamo.Core
                     }
 
                     var newTableName = await this.tableCreator
-                        .CreateTableAsync(kvp.Key, kvp.Value);
+                        .CreateTableAsync(this.options.ContextType, kvp.Key, kvp.Value);
 
                     newTablesByEntityType[kvp.Key] = newTableName;
                 }
