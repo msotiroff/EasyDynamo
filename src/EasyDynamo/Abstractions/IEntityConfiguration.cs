@@ -4,12 +4,12 @@ using System.Collections.Generic;
 
 namespace EasyDynamo.Abstractions
 {
-    public interface IEntityConfiguration
+    public interface IEntityConfiguration : IEntityConfigurationMetadata
     {
         string HashKeyMemberName { get; set; }
-        
+
         Type HashKeyMemberType { get; set; }
-        
+
         ISet<string> IgnoredMembersNames { get; }
 
         ISet<GlobalSecondaryIndexConfiguration> Indexes { get; }
