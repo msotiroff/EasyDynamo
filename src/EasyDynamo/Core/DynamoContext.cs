@@ -1,7 +1,7 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
+using EasyDynamo.Abstractions;
 using EasyDynamo.Attributes;
 using EasyDynamo.Builders;
-using EasyDynamo.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -13,13 +13,27 @@ namespace EasyDynamo.Core
     public abstract class DynamoContext
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly DynamoContextOptions options;
+        private readonly IDependencyResolver dependencyResolver;
+        private readonly IDynamoContextOptions options;
 
         protected DynamoContext(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            this.options = DynamoContextOptions.Instance;
-            this.Database = this.serviceProvider.GetRequiredService<DatabaseFacade>();
+            this.options = serviceProvider
+                .GetRequiredService<IDynamoContextOptionsProvider>()
+                .GetContextOptions(this.GetType());
+            this.Database = this.GetDatabaseFacadeInstance();
+            this.ListAllTablesByDbSets();
+            this.InstantiateAllSets();
+        }
+
+        protected DynamoContext(IDependencyResolver dependencyResolver)
+        {
+            this.dependencyResolver = dependencyResolver;
+            this.options = this.dependencyResolver
+                .GetDependency<IDynamoContextOptionsProvider>()
+                .GetContextOptions(this.GetType());
+            this.Database = this.GetDatabaseFacadeInstance();
             this.ListAllTablesByDbSets();
             this.InstantiateAllSets();
         }
@@ -39,8 +53,9 @@ namespace EasyDynamo.Core
         /// <summary>
         /// Use to configure the database models.
         /// </summary>
-        protected virtual void OnModelCreating(
-            ModelBuilder builder, IConfiguration configuration)
+        protected virtual void OnModelCreating<TContext>(
+            ModelBuilder<TContext> builder, IConfiguration configuration)
+            where TContext : DynamoContext
         {
             return;
         }
@@ -70,7 +85,8 @@ namespace EasyDynamo.Core
                 throw new InvalidOperationException($"{propertyType} is not a generic type.");
             }
 
-            var instance = this.serviceProvider.GetService(propertyType);
+            var instance = this.serviceProvider?.GetService(propertyType)
+                ?? this.dependencyResolver?.GetDependency(propertyType);
 
             if (instance != null)
             {
@@ -83,10 +99,14 @@ namespace EasyDynamo.Core
             var constructorParams = constructor
                 .GetParameters()
                 .Select(pi => pi.ParameterType)
-                .Select(t => this.serviceProvider.GetRequiredService(t))
-                .ToArray();
+                .Select(t => 
+                    this.serviceProvider?.GetRequiredService(t) 
+                    ?? this.dependencyResolver.GetDependency(t))
+                .ToList();
 
-            instance = constructor.Invoke(constructorParams);
+            constructorParams.Add(this.GetType());
+
+            instance = constructor.Invoke(constructorParams.ToArray());
 
             if (instance != null)
             {
@@ -120,6 +140,26 @@ namespace EasyDynamo.Core
                 this.options.TableNameByEntityTypes[entityType] = tableNameFromAttribute 
                     ?? entityType.Name;
             }
+        }
+
+        private DatabaseFacade GetDatabaseFacadeInstance()
+        {
+            var constructor = typeof(DatabaseFacade)
+                .GetConstructors()
+                .First();
+            var constructorParameters = constructor
+                .GetParameters()
+                .Select(pi => 
+                    this.serviceProvider?.GetService(pi.ParameterType)
+                    ?? this.dependencyResolver?.GetDependency(pi.ParameterType))
+                .Where(i => i != null)
+                .ToList();
+
+            constructorParameters.Add(this.GetType());
+
+            var instance = constructor.Invoke(constructorParameters.ToArray());
+
+            return instance as DatabaseFacade;
         }
     }
 }

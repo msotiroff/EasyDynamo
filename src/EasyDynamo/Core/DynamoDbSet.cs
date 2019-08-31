@@ -17,13 +17,13 @@ namespace EasyDynamo.Core
     public class DynamoDbSet<TEntity> : IDynamoDbSet<TEntity> where TEntity : class, new()
     {
         private readonly DynamoDBOperationConfig operationConfig;
-        private readonly EntityConfiguration<TEntity> entityConfig;
+        private readonly IEntityConfiguration<TEntity> entityConfig;
         private readonly IDynamoContextOptions contextOptions;
         private readonly Table table;
         private readonly IIndexExtractor indexExtractor;
         private readonly ITableNameExtractor tableNameExtractor;
         private readonly IPrimaryKeyExtractor primaryKeyExtractor;
-        private readonly IEntityValidator<TEntity> validator;
+        private readonly IEntityValidator validator;
 
         public DynamoDbSet(
             IAmazonDynamoDB client,
@@ -31,7 +31,10 @@ namespace EasyDynamo.Core
             IIndexExtractor indexExtractor,
             ITableNameExtractor tableNameExtractor,
             IPrimaryKeyExtractor primaryKeyExtractor,
-            IEntityValidator<TEntity> validator)
+            IEntityValidator validator,
+            IEntityConfiguration<TEntity> entityConfiguration,
+            IDynamoContextOptionsProvider optionsProvider,
+            Type contextType)
         {
             this.Client = client;
             this.Base = dbContext;
@@ -40,11 +43,12 @@ namespace EasyDynamo.Core
             this.primaryKeyExtractor = primaryKeyExtractor;
             this.validator = validator;
             this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
-            this.entityConfig = EntityConfiguration<TEntity>.Instance;
-            this.contextOptions = DynamoContextOptions.Instance;
+            this.entityConfig = entityConfiguration;
+            this.contextOptions = optionsProvider.GetContextOptions(contextType);
             this.operationConfig = new DynamoDBOperationConfig
             {
-                OverrideTableName = this.tableNameExtractor.ExtractTableName<TEntity>(this.table),
+                OverrideTableName = this.tableNameExtractor.ExtractTableName(
+                    this.contextOptions, entityConfiguration, this.table),
                 Conversion = this.contextOptions.Conversion ?? DynamoDBEntryConversion.V1
             };
         }
@@ -230,7 +234,8 @@ namespace EasyDynamo.Core
 
             var memberName = propertyExpression.TryGetMemberName();
             var currentoperationConfig = this.operationConfig.Clone();
-            var indexName = this.indexExtractor.ExtractIndex<TEntity>(memberName, this.table);
+            var indexName = this.indexExtractor.ExtractIndex<TEntity>(
+                memberName, this.entityConfig, this.table);
 
             if (!string.IsNullOrWhiteSpace(indexName))
             {
@@ -291,7 +296,8 @@ namespace EasyDynamo.Core
             InputValidator.ThrowIfNullOrWhitespace(memberName);
 
             var index = indexName
-                ?? this.indexExtractor.ExtractIndex<TEntity>(memberName, this.table);
+                ?? this.indexExtractor.ExtractIndex<TEntity>(
+                    memberName, this.entityConfig, this.table);
             var configuration = this.operationConfig.Clone();
             configuration.IndexName = index;
 
@@ -351,7 +357,7 @@ namespace EasyDynamo.Core
 
         private async Task EnsureDoesNotExistAsync(TEntity entity)
         {
-            var key = this.primaryKeyExtractor.ExtractPrimaryKey(entity);
+            var key = this.primaryKeyExtractor.ExtractPrimaryKey(entity, this.entityConfig);
             var exist = (await this.GetAsync(key)) != null;
 
             if (exist)
@@ -362,7 +368,7 @@ namespace EasyDynamo.Core
 
         private async Task EnsureExistAsync(TEntity entity)
         {
-            var key = this.primaryKeyExtractor.ExtractPrimaryKey(entity);
+            var key = this.primaryKeyExtractor.ExtractPrimaryKey(entity, this.entityConfig);
             var exist = (await this.GetAsync(key)) != null;
 
             if (!exist)
@@ -394,7 +400,7 @@ namespace EasyDynamo.Core
             // Validates the entity against its configuration and its attributes:
             if (this.entityConfig.ValidateOnSave)
             {
-                this.validator.Validate(entity);
+                this.validator.Validate(this.contextOptions.ContextType, entity);
             }
 
             var entityType = entity.GetType();

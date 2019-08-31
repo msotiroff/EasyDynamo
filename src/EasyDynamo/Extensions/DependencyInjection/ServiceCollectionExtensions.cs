@@ -5,8 +5,8 @@ using EasyDynamo.Abstractions;
 using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Core;
-using EasyDynamo.Exceptions;
 using EasyDynamo.Tools;
+using EasyDynamo.Tools.Resolvers;
 using EasyDynamo.Tools.Validators;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +18,6 @@ namespace EasyDynamo.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        private static bool dynamoContextAdded = false;
-
         /// <summary>
         /// Adds your database context class to the service provider.
         /// Use to configure the DynamoContext options.
@@ -36,9 +34,11 @@ namespace EasyDynamo.Extensions.DependencyInjection
         {
             InputValidator.ThrowIfNull(optionsExpression);
 
-            var contextOptions = DynamoContextOptions.Instance;
+            var contextOptions = new DynamoContextOptions(typeof(TContext));
 
             optionsExpression(contextOptions);
+
+            services.AddSingleton<IDynamoContextOptions>(sp => contextOptions);
 
             services.AddDynamoContext<TContext>(configuration);
             
@@ -57,36 +57,45 @@ namespace EasyDynamo.Extensions.DependencyInjection
             this IServiceCollection services, IConfiguration configuration) 
             where TContext : DynamoContext
         {
-            services.AddCoreServices(configuration);
+            services.AddSingleton<IDependencyResolver, ServiceProviderDependencyResolver>();
+            services.AddCoreServices();
 
             var awsOptions = configuration.GetAWSOptions();
+            var contextOptions = services
+                .BuildServiceProvider()
+                .GetRequiredService<IDynamoContextOptionsProvider>()
+                .TryGetContextOptions<TContext>();
+
+            if (contextOptions == null)
+            {
+                contextOptions = new DynamoContextOptions(typeof(TContext));
+
+                services.AddSingleton(sp => contextOptions);
+            }
 
             services.AddDefaultAWSOptions(awsOptions);
 
-            services.EnsureContextNotAdded<TContext>();
-
             var contextInstance = Instantiator.GetConstructorlessInstance<TContext>();
 
-            BuildModels(contextInstance, configuration);
+            services.BuildModels(contextInstance, configuration, contextOptions);
 
-            BuildConfiguration(contextInstance, configuration);
+            BuildConfiguration(contextInstance, configuration, contextOptions);
 
             services.AddSingleton<TContext>();
             services.AddSingleton(typeof(IDynamoDbSet<>), typeof(DynamoDbSet<>));
             services.AddSingleton<IDynamoDBContext>(
                 sp => new DynamoDBContext(sp.GetRequiredService<IAmazonDynamoDB>()));
 
-            services.AddDynamoClient(awsOptions);
+            services.AddDynamoClient(awsOptions, contextOptions);
             
-            dynamoContextAdded = true;
-
             return services;
         }
         
         private static IServiceCollection AddDynamoClient(
-            this IServiceCollection services, AWSOptions awsOptions)
+            this IServiceCollection services, 
+            AWSOptions awsOptions, 
+            IDynamoContextOptions options)
         {
-            var options = DynamoContextOptions.Instance;
             var awsCredentials = awsOptions?.Credentials?.GetCredentials();
 
             options.Profile = options.Profile ?? awsOptions?.Profile;
@@ -109,7 +118,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
 
         private static void AddDynamoCloudClient(
             IServiceCollection services, 
-            DynamoContextOptions contextOptions,
+            IDynamoContextOptions contextOptions,
             AWSOptions awsOptions)
         {
             contextOptions.ValidateCloudMode();
@@ -122,7 +131,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
         }
 
         private static void AddDynamoLocalClient(
-            IServiceCollection services, DynamoContextOptions options)
+            IServiceCollection services, IDynamoContextOptions options)
         {
             options.ValidateLocalMode();
 
@@ -136,27 +145,13 @@ namespace EasyDynamo.Extensions.DependencyInjection
                         options.AccessKeyId, options.SecretAccessKey, clientConfig));
         }
 
-        private static IServiceCollection EnsureContextNotAdded<TContext>(
-            this IServiceCollection services)
-        {
-            var isAlreadyAddedInServices = services
-                .Any(s => s.ImplementationType == typeof(TContext));
-
-            if (dynamoContextAdded || isAlreadyAddedInServices)
-            {
-                throw new DynamoContextConfigurationException(
-                    "You can add only one DynamoContext.");
-            }
-
-            return services;
-        }
-        
         private static void BuildConfiguration<TContext>(
             TContext contextInstance, 
-            IConfiguration configuration) 
+            IConfiguration configuration,
+            IDynamoContextOptions contextOptions) 
             where TContext : DynamoContext
         {
-            var dynamoOptionsBuilder = DynamoContextOptionsBuilder.Instance;
+            var dynamoOptionsBuilder = new DynamoContextOptionsBuilder(contextOptions);
             var configuringMethod = typeof(TContext)
                 .GetMethod("OnConfiguring", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -165,22 +160,26 @@ namespace EasyDynamo.Extensions.DependencyInjection
         }
 
         private static void BuildModels<TContext>(
-            TContext contextInstance, IConfiguration configuration) 
+            this IServiceCollection services,
+            TContext contextInstance, 
+            IConfiguration configuration, 
+            IDynamoContextOptions contextOptions) 
             where TContext : DynamoContext
         {
-            var modelBuilder = ModelBuilder.Instance;
+            var modelBuilder = new ModelBuilder<TContext>(contextOptions);
             var modelCreatingMethod = typeof(TContext)
                 .GetMethod("OnModelCreating", BindingFlags.Instance | BindingFlags.NonPublic);
 
             modelCreatingMethod.Invoke(contextInstance, new object[] { modelBuilder, configuration });
+
+            modelBuilder.EntityConfigurations
+                .Values
+                .ToList()
+                .ForEach(config => services.AddSingleton(config));
         }
 
-        private static IServiceCollection AddCoreServices(
-            this IServiceCollection services, IConfiguration configuration)
+        private static IServiceCollection AddCoreServices(this IServiceCollection services)
         {
-            services.AddTransient(typeof(IEntityValidator<>), typeof(EntityValidator<>));
-            services.AddSingleton<DatabaseFacade>();
-
             typeof(ServiceCollectionExtensions)
                 .Assembly
                 .GetTypes()
