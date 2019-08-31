@@ -1,6 +1,7 @@
 ﻿using Amazon;
 using Amazon.DynamoDBv2;
 using EasyDynamo.Abstractions;
+using EasyDynamo.Core;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Tools.Validators;
 using System;
@@ -10,34 +11,17 @@ namespace EasyDynamo.Config
 {
     public class DynamoContextOptions : IDynamoContextOptions
     {
-        private static volatile DynamoContextOptions instance;
-        private static readonly object instanceLocker = new object();
-
-        protected DynamoContextOptions()
+        protected internal DynamoContextOptions(Type contextType)
         {
+            this.EnsureValidContextType(contextType);
+
+            this.ContextType = contextType;
             this.TableNameByEntityTypes = new Dictionary<Type, string>();
         }
 
-        protected internal static DynamoContextOptions Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    lock (instanceLocker)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new DynamoContextOptions();
-                        }
-                    }
-                }
+        public Type ContextType { get; }
 
-                return instance;
-            }
-        }
-
-        protected internal IDictionary<Type, string> TableNameByEntityTypes { get; }
+        public IDictionary<Type, string> TableNameByEntityTypes { get; }
 
         public string AccessKeyId { get; set; }
         
@@ -53,7 +37,7 @@ namespace EasyDynamo.Config
 
         public DynamoDBEntryConversion Conversion { get; set; }
 
-        protected internal void ValidateLocalMode()
+        public void ValidateLocalMode()
         {
             if (!this.LocalMode)
             {
@@ -74,7 +58,7 @@ namespace EasyDynamo.Config
             }
         }
 
-        protected internal void ValidateCloudMode()
+        public void ValidateCloudMode()
         {
             if (this.LocalMode)
             {
@@ -99,6 +83,17 @@ namespace EasyDynamo.Config
                 tableName, $"Parameter name cannot be empty: {nameof(tableName)}.");
 
             this.TableNameByEntityTypes[typeof(TEntity)] = tableName;
+        }
+
+        private void EnsureValidContextType(Type contextType)
+        {
+            if (typeof(DynamoContext).IsAssignableFrom(contextType))
+            {
+                return;
+            }
+
+            throw new DynamoContextConfigurationException(
+                $"{contextType.FullName} does not inherit from {nameof(DynamoContext)}.");
         }
     }
 }
