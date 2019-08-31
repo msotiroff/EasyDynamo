@@ -1,7 +1,6 @@
 ﻿using Amazon;
 using Amazon.DynamoDBv2;
 using EasyDynamo.Abstractions;
-using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Tools.Validators;
 using System;
@@ -10,33 +9,11 @@ namespace EasyDynamo.Builders
 {
     public class DynamoContextOptionsBuilder
     {
-        private static volatile DynamoContextOptionsBuilder instance;
-        private static readonly object instanceLocker = new object();
-
         private readonly IDynamoContextOptions options;
 
-        protected DynamoContextOptionsBuilder(IDynamoContextOptions options = null)
+        protected internal DynamoContextOptionsBuilder(IDynamoContextOptions options)
         {
-            this.options = options ?? DynamoContextOptions.Instance;
-        }
-
-        internal static DynamoContextOptionsBuilder Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    lock (instanceLocker)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new DynamoContextOptionsBuilder();
-                        }
-                    }
-                }
-
-                return instance;
-            }
+            this.options = options;
         }
 
         /// <summary>
