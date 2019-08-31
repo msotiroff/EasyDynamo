@@ -2,7 +2,6 @@
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using EasyDynamo.Abstractions;
-using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions;
@@ -21,26 +20,27 @@ namespace EasyDynamo.Tools
         private readonly IIndexFactory indexFactory;
         private readonly IAttributeDefinitionFactory attributeDefinitionFactory;
         private readonly IIndexConfigurationFactory indexConfigurationFactory;
+        private readonly IEntityConfigurationProvider entityConfigurationProvider;
         
         public TableCreator(
             IAmazonDynamoDB client,
             IIndexFactory indexFactory,
             IAttributeDefinitionFactory attributeDefinitionFactory,
-            IIndexConfigurationFactory indexConfigurationFactory)
+            IIndexConfigurationFactory indexConfigurationFactory,
+            IEntityConfigurationProvider entityConfigurationProvider)
         {
             this.client = client;
             this.indexFactory = indexFactory;
             this.attributeDefinitionFactory = attributeDefinitionFactory;
             this.indexConfigurationFactory = indexConfigurationFactory;
+            this.entityConfigurationProvider = entityConfigurationProvider;
         }
 
-        public async Task<string> CreateTableAsync(Type entityType, string tableName)
+        public async Task<string> CreateTableAsync(
+            Type contextType, Type entityType, string tableName)
         {
             InputValidator.ThrowIfAnyNullOrWhitespace(entityType, tableName);
 
-            var configurationsByEntityTypes = ModelBuilder
-                .Instance
-                .EntityConfigurationByEntityTypes;
             var dynamoDbTableAttribute = entityType.GetCustomAttribute<DynamoDBTableAttribute>(true);
             tableName = dynamoDbTableAttribute?.TableName ?? tableName;
             var hashKeyMember = entityType
@@ -54,14 +54,13 @@ namespace EasyDynamo.Tools
                 .GetProperty(hashKeyMember?.Name ?? string.Empty)
                 ?.PropertyType;
             var entityConfigRequired = hashKeyMember == null;
-            var entityConfig = configurationsByEntityTypes.ContainsKey(entityType)
-                ? configurationsByEntityTypes[entityType]
-                : null;
+            var entityConfig = this.entityConfigurationProvider
+                .TryGetEntityConfiguration(contextType, entityType);
 
             if (entityConfigRequired && entityConfig == null)
             {
                 throw new DynamoContextConfigurationException(string.Format(
-                            ExceptionMessage.EntityConfigurationNotFound, entityType.FullName));
+                    ExceptionMessage.EntityConfigurationNotFound, entityType.FullName));
             }
 
             var hashKeyMemberName = entityConfig?.HashKeyMemberName

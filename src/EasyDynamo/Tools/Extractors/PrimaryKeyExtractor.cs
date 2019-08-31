@@ -10,10 +10,13 @@ namespace EasyDynamo.Tools.Extractors
 {
     public class PrimaryKeyExtractor : IPrimaryKeyExtractor
     {
-        public object ExtractPrimaryKey<TEntity>(TEntity entity, Table tableInfo = null)
+        public object ExtractPrimaryKey<TEntity>(
+            TEntity entity, 
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null)
             where TEntity : class, new()
         {
-            var keyExpression = EntityConfiguration<TEntity>.Instance.HashKeyMemberExpression;
+            var keyExpression = entityConfiguration.HashKeyMemberExpression;
 
             if (keyExpression != null)
             {
@@ -37,12 +40,15 @@ namespace EasyDynamo.Tools.Extractors
                     ExceptionMessage.HashKeyConfigurationNotFound);
         }
 
-        public object TryExtractPrimaryKey<TEntity>(TEntity entity, Table tableInfo = null)
+        public object TryExtractPrimaryKey<TEntity>(
+            TEntity entity,
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null)
             where TEntity : class, new()
         {
             try
             {
-                return this.ExtractPrimaryKey(entity, tableInfo);
+                return this.ExtractPrimaryKey(entity, entityConfiguration, tableInfo);
             }
             catch
             {

@@ -9,10 +9,13 @@ namespace EasyDynamo.Tools.Extractors
 {
     public class IndexExtractor : IIndexExtractor
     {
-        public string ExtractIndex<TEntity>(string memberName, Table tableInfo = null)
+        public string ExtractIndex<TEntity>(
+            string memberName, 
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null)
             where TEntity : class, new()
         {
-            var fromModelConfig = EntityConfiguration<TEntity>.Instance
+            var fromModelConfig = entityConfiguration
                 .Indexes
                 ?.FirstOrDefault(i => i.HashKeyMemberName == memberName)
                 ?.IndexName;
@@ -40,16 +43,19 @@ namespace EasyDynamo.Tools.Extractors
                     memberName));
         }
 
-        public string TryExtractIndex<TEntity>(string memberName, Table tableInfo = null) 
+        public string TryExtractIndex<TEntity>(
+            string memberName, 
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null) 
             where TEntity : class, new()
         {
             try
             {
-                return this.ExtractIndex<TEntity>(memberName, tableInfo);
+                return this.ExtractIndex(memberName, entityConfiguration, tableInfo);
             }
             catch (System.Exception)
             {
-                return default(string);
+                return default;
             }
         }
     }

@@ -2,7 +2,6 @@
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using EasyDynamo.Abstractions;
-using EasyDynamo.Config;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,12 +16,15 @@ namespace EasyDynamo.Tools.Extractors
             this.client = client;
         }
 
-        public string ExtractTableName<TEntity>(Table tableInfo = null) 
+        public string ExtractTableName<TEntity>(
+            IDynamoContextOptions options, 
+            IEntityConfiguration<TEntity> entityConfiguration,
+            Table tableInfo = null) 
             where TEntity : class, new()
         {
             var fromTableInfo = tableInfo?.TableName;
-            var fromEntityConfig = EntityConfiguration<TEntity>.Instance.TableName;
-            var tableNamesByEntityTypes = DynamoContextOptions.Instance.TableNameByEntityTypes;
+            var fromEntityConfig = entityConfiguration.TableName;
+            var tableNamesByEntityTypes = options.TableNameByEntityTypes;
             var fromContextConfig = tableNamesByEntityTypes.ContainsKey(typeof(TEntity))
                 ? tableNamesByEntityTypes[typeof(TEntity)]
                 : default(string);

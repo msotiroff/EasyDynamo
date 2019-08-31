@@ -4,10 +4,16 @@ namespace EasyDynamo.Abstractions
 {
     public interface IPrimaryKeyExtractor
     {
-        object ExtractPrimaryKey<TEntity>(TEntity entity, Table tableInfo = null) 
+        object ExtractPrimaryKey<TEntity>(
+            TEntity entity, 
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null) 
             where TEntity : class, new();
 
-        object TryExtractPrimaryKey<TEntity>(TEntity entity, Table tableInfo = null) 
+        object TryExtractPrimaryKey<TEntity>(
+            TEntity entity, 
+            IEntityConfiguration<TEntity> entityConfiguration, 
+            Table tableInfo = null) 
             where TEntity : class, new();
     }
 }
