@@ -1,4 +1,5 @@
 ﻿using EasyDynamo.Abstractions;
+using EasyDynamo.Core;
 using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
@@ -6,13 +7,12 @@ using System.Linq.Expressions;
 
 namespace EasyDynamo.Config
 {
-    public class EntityConfiguration<TEntity> : IEntityConfiguration where TEntity : class
+    public class EntityConfiguration<TContext, TEntity> : IEntityConfiguration<TEntity>
+        where TContext : DynamoContext 
+        where TEntity : class
     {
         private long readCapacityUnits;
         private long writeCapacityUnits;
-
-        private static volatile EntityConfiguration<TEntity> instance;
-        private static readonly object instanceLocker = new object();
 
         protected internal EntityConfiguration()
         {
@@ -25,24 +25,9 @@ namespace EasyDynamo.Config
             this.WriteCapacityUnits = 1;
         }
 
-        protected internal static EntityConfiguration<TEntity> Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    lock (instanceLocker)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new EntityConfiguration<TEntity>();
-                        }
-                    }
-                }
+        public Type ContextType => typeof(TContext);
 
-                return instance;
-            }
-        }
+        public Type EntityType => typeof(TEntity);
 
         public ICollection<PropertyConfiguration<TEntity>> Properties { get; }
 
