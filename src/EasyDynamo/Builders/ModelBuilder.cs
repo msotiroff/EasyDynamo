@@ -1,41 +1,25 @@
 ﻿using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
+using EasyDynamo.Core;
 using EasyDynamo.Tools.Validators;
 using System;
 using System.Collections.Generic;
 
 namespace EasyDynamo.Builders
 {
-    public class ModelBuilder
+    public class ModelBuilder<TContext> where TContext : DynamoContext
     {
-        private static volatile ModelBuilder instance;
-        private static readonly object instanceLocker = new object();
-        
-        protected ModelBuilder()
+        private readonly IDynamoContextOptions contextOptions;
+        private readonly Dictionary<Type, object> entityBuildersByEntityType;
+
+        protected internal ModelBuilder(IDynamoContextOptions contextOptions)
         {
-            this.EntityConfigurationByEntityTypes = new Dictionary<Type, IEntityConfiguration>();
+            this.contextOptions = contextOptions;
+            this.entityBuildersByEntityType = new Dictionary<Type, object>();
+            this.EntityConfigurations = new Dictionary<Type, IEntityConfiguration>();
         }
         
-        protected internal static ModelBuilder Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    lock (instanceLocker)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new ModelBuilder();
-                        }
-                    }
-                }
-
-                return instance;
-            }
-        }
-
-        protected internal IDictionary<Type, IEntityConfiguration> EntityConfigurationByEntityTypes { get; }
+        protected internal IDictionary<Type, IEntityConfiguration> EntityConfigurations { get; }
 
         /// <summary>
         /// Applies a specific configuration for a given entity.
@@ -43,17 +27,14 @@ namespace EasyDynamo.Builders
         /// and build all configurations in the Configure method.
         /// Then call ApplyConfiguration with a new instance of that implementation class.
         /// </summary>
-        public ModelBuilder ApplyConfiguration<TEntity>(
-            IEntityTypeConfiguration<TEntity> configuration) where TEntity : class, new()
+        public ModelBuilder<TContext> ApplyConfiguration<TEntity>(
+            IEntityTypeConfiguration<TContext, TEntity> configuration) where TEntity : class, new()
         {
             InputValidator.ThrowIfNull(configuration, "configuration connot be null.");
 
-            var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
+            var entityBuilder = this.GetEntityBuilder<TEntity>();
             
             configuration.Configure(entityBuilder);
-
-            this.EntityConfigurationByEntityTypes[typeof(TEntity)] =
-                EntityConfiguration<TEntity>.Instance;
 
             return this;
         }
@@ -61,34 +42,63 @@ namespace EasyDynamo.Builders
         /// <summary>
         /// Returns a builder for a specified entity type.
         /// </summary>
-        public IEntityTypeBuilder<TEntity> Entity<TEntity>() where TEntity : class, new()
+        public IEntityTypeBuilder<TContext, TEntity> Entity<TEntity>() where TEntity : class, new()
         {
-            var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
-
-            this.EntityConfigurationByEntityTypes[typeof(TEntity)] =
-                EntityConfiguration<TEntity>.Instance;
-
-            return entityBuilder;
+            return this.GetEntityBuilder<TEntity>();
         }
 
         /// <summary>
         /// Applies a specific configuration for a given entity. 
         /// Insert the entity configuration in the buildAction parameter.
         /// </summary>
-        public ModelBuilder Entity<TEntity>(
-            Action<IEntityTypeBuilder<TEntity>> buildAction) 
+        public ModelBuilder<TContext> Entity<TEntity>(
+            Action<IEntityTypeBuilder<TContext, TEntity>> buildAction) 
             where TEntity : class, new()
         {
             InputValidator.ThrowIfNull(buildAction, "buildAction cannot be null.");
 
-            var entityBuilder = EntityTypeBuilder<TEntity>.Instance;
+            var entityBuilder = this.GetEntityBuilder<TEntity>();
 
-            this.EntityConfigurationByEntityTypes[typeof(TEntity)] = 
-                EntityConfiguration<TEntity>.Instance;
-            
             buildAction(entityBuilder);
 
             return this;
+        }
+
+        private IEntityTypeBuilder<TContext, TEntity> GetEntityBuilder<TEntity>() 
+            where TEntity : class, new()
+        {
+            var entityConfig = default(EntityConfiguration<TContext, TEntity>);
+
+            if (this.EntityConfigurations.ContainsKey(typeof(TEntity)))
+            {
+                entityConfig = (EntityConfiguration<TContext, TEntity>)
+                    this.EntityConfigurations[typeof(TEntity)];
+            }
+
+            if (entityConfig == null)
+            {
+                entityConfig = new EntityConfiguration<TContext, TEntity>();
+
+                this.EntityConfigurations[typeof(TEntity)] = entityConfig;
+            }
+
+            var entityBuilder = default(EntityTypeBuilder<TContext, TEntity>);
+
+            if (this.entityBuildersByEntityType.ContainsKey(typeof(TEntity)))
+            {
+                entityBuilder = (EntityTypeBuilder<TContext, TEntity>)
+                    this.entityBuildersByEntityType[typeof(TEntity)];
+            }
+
+            if (entityBuilder == null)
+            {
+                entityBuilder = new EntityTypeBuilder<TContext, TEntity>(
+                    entityConfig, this.contextOptions);
+
+                this.entityBuildersByEntityType[typeof(TEntity)] = entityBuilder;
+            }
+
+            return entityBuilder;
         }
     }
 }
