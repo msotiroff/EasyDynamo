@@ -5,12 +5,14 @@ using EasyDynamo.Abstractions;
 using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Core;
+using EasyDynamo.Exceptions;
 using EasyDynamo.Tools;
 using EasyDynamo.Tools.Resolvers;
 using EasyDynamo.Tools.Validators;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -18,6 +20,8 @@ namespace EasyDynamo.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
+        private static HashSet<Type> contextTypesAdded = new HashSet<Type>();
+
         /// <summary>
         /// Adds your database context class to the service provider.
         /// Use to configure the DynamoContext options.
@@ -57,6 +61,8 @@ namespace EasyDynamo.Extensions.DependencyInjection
             this IServiceCollection services, IConfiguration configuration) 
             where TContext : DynamoContext
         {
+            services.EnsureContextNotAdded<TContext>();
+
             services.AddSingleton<IDependencyResolver, ServiceProviderDependencyResolver>();
             services.AddCoreServices();
 
@@ -87,6 +93,8 @@ namespace EasyDynamo.Extensions.DependencyInjection
                 sp => new DynamoDBContext(sp.GetRequiredService<IAmazonDynamoDB>()));
 
             services.AddDynamoClient(awsOptions, contextOptions);
+
+            contextTypesAdded.Add(typeof(TContext));
             
             return services;
         }
@@ -195,6 +203,21 @@ namespace EasyDynamo.Extensions.DependencyInjection
                 })
                 .ToList()
                 .ForEach(s => services.AddTransient(s.Interface, s.Implementation));
+
+            return services;
+        }
+
+        private static IServiceCollection EnsureContextNotAdded<TContext>(
+            this IServiceCollection services)
+        {
+            var isAlreadyAddedInServices = services
+                .Any(s => s.ImplementationType == typeof(TContext));
+
+            if (contextTypesAdded.Contains(typeof(TContext)) || isAlreadyAddedInServices)
+            {
+                throw new DynamoContextConfigurationException(
+                    $"You can invoke AddDynamoContext<{typeof(TContext).FullName}> only once.");
+            }
 
             return services;
         }
