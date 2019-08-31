@@ -1,7 +1,11 @@
-﻿namespace EasyDynamo.Abstractions
+﻿using EasyDynamo.Core;
+
+namespace EasyDynamo.Abstractions
 {
-    public interface IEntityTypeConfiguration<TEntity> where TEntity : class
+    public interface IEntityTypeConfiguration<TContext, TEntity>
+        where TContext : DynamoContext
+        where TEntity : class
     {
-        void Configure(IEntityTypeBuilder<TEntity> builder);
+        void Configure(IEntityTypeBuilder<TContext, TEntity> builder);
     }
 }

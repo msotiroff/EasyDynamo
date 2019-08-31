@@ -1,6 +1,6 @@
 ﻿using EasyDynamo.Abstractions;
 using EasyDynamo.Config;
-using EasyDynamo.Exceptions;
+using EasyDynamo.Core;
 using EasyDynamo.Extensions;
 using EasyDynamo.Tools.Validators;
 using System;
@@ -9,47 +9,26 @@ using System.Linq.Expressions;
 
 namespace EasyDynamo.Builders
 {
-    public class EntityTypeBuilder<TEntity> : IEntityTypeBuilder<TEntity> 
+    public class EntityTypeBuilder<TContext, TEntity> : IEntityTypeBuilder<TContext, TEntity> 
+        where TContext : DynamoContext
         where TEntity : class, new()
     {
-        private static volatile EntityTypeBuilder<TEntity> instance;
-        private static readonly object instanceLocker = new object();
-
-        private readonly EntityConfiguration<TEntity> entityConfig;
+        private readonly EntityConfiguration<TContext, TEntity> entityConfig;
         private readonly IDynamoContextOptions contextOptions;
 
-        protected EntityTypeBuilder(
-            EntityConfiguration<TEntity> entityConfig = null,
-            IDynamoContextOptions contextOptions = null)
+        protected internal EntityTypeBuilder(
+            EntityConfiguration<TContext, TEntity> entityConfig,
+            IDynamoContextOptions contextOptions)
         {
-            this.entityConfig = entityConfig ?? EntityConfiguration<TEntity>.Instance;
-            this.contextOptions = contextOptions ?? DynamoContextOptions.Instance;
-        }
-
-        internal static IEntityTypeBuilder<TEntity> Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    lock (instanceLocker)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new EntityTypeBuilder<TEntity>();
-                        }
-                    }
-                }
-
-                return instance;
-            }
+            this.entityConfig = entityConfig;
+            this.contextOptions = contextOptions;
         }
 
         /// <summary>
         /// Adds a table name for a specific entity type.
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
-        public IEntityTypeBuilder<TEntity> HasTable(string tableName)
+        public IEntityTypeBuilder<TContext, TEntity> HasTable(string tableName)
         {
             InputValidator.ThrowIfNullOrWhitespace(
                 tableName, 
@@ -65,7 +44,7 @@ namespace EasyDynamo.Builders
         /// Adds info for a Global Secondary Index to the configuration.
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
-        public IEntityTypeBuilder<TEntity> HasGlobalSecondaryIndex(
+        public IEntityTypeBuilder<TContext, TEntity> HasGlobalSecondaryIndex(
             string indexName,
             Expression<Func<TEntity, object>> hashKeyMemberExpression,
             Expression<Func<TEntity, object>> rangeKeyMemberExpression,
@@ -96,7 +75,7 @@ namespace EasyDynamo.Builders
         /// Adds info for a Global Secondary Index to the configuration.
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        public IEntityTypeBuilder<TEntity> HasGlobalSecondaryIndex(
+        public IEntityTypeBuilder<TContext, TEntity> HasGlobalSecondaryIndex(
             Action<GlobalSecondaryIndexConfiguration> indexAction)
         {
             InputValidator.ThrowIfNull(indexAction, "indexAction cannot be null.");
@@ -143,7 +122,7 @@ namespace EasyDynamo.Builders
         /// <summary>
         /// Specify the primary key for that entity type.
         /// </summary>
-        public IEntityTypeBuilder<TEntity> HasPrimaryKey(
+        public IEntityTypeBuilder<TContext, TEntity> HasPrimaryKey(
             Expression<Func<TEntity, object>> keyExpression)
         {
             InputValidator.ThrowIfNull(keyExpression, "keyExpression cannot be null.");
@@ -159,7 +138,7 @@ namespace EasyDynamo.Builders
         /// Ignore that property when save the entity to the database. 
         /// All ignored members will be set to its default value before saving in the database.
         /// </summary>
-        public IEntityTypeBuilder<TEntity> Ignore(
+        public IEntityTypeBuilder<TContext, TEntity> Ignore(
             Expression<Func<TEntity, object>> propertyExpression)
         {
             InputValidator.ThrowIfNull(propertyExpression);
@@ -177,7 +156,7 @@ namespace EasyDynamo.Builders
         /// All ignored members will be set to its default value before saving in the database.
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
-        public IEntityTypeBuilder<TEntity> Ignore(string propertyName)
+        public IEntityTypeBuilder<TContext, TEntity> Ignore(string propertyName)
         {
             InputValidator.ThrowIfNullOrWhitespace(propertyName);
 
@@ -191,7 +170,7 @@ namespace EasyDynamo.Builders
         /// configuration and its attributes before saving in the database ot not.
         /// True by default.
         /// </summary>
-        public IEntityTypeBuilder<TEntity> ValidateOnSave(bool validate = true)
+        public IEntityTypeBuilder<TContext, TEntity> ValidateOnSave(bool validate = true)
         {
             this.entityConfig.ValidateOnSave = validate;
 
@@ -225,7 +204,7 @@ namespace EasyDynamo.Builders
         /// Specify the ReadCapacityUnits for the entity's corresponding dynamo table.
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        public IEntityTypeBuilder<TEntity> HasReadCapacityUnits(long readCapacityUnits)
+        public IEntityTypeBuilder<TContext, TEntity> HasReadCapacityUnits(long readCapacityUnits)
         {
             InputValidator.ThrowIfNotPositive(
                 readCapacityUnits,
@@ -240,7 +219,7 @@ namespace EasyDynamo.Builders
         /// Specify the WriteCapacityUnits for the entity's corresponding dynamo table.
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        public IEntityTypeBuilder<TEntity> HasWriteCapacityUnits(long writeCapacityUnits)
+        public IEntityTypeBuilder<TContext, TEntity> HasWriteCapacityUnits(long writeCapacityUnits)
         {
             InputValidator.ThrowIfNotPositive(
                 writeCapacityUnits,
