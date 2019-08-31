@@ -1,25 +1,25 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using EasyDynamo.Abstractions;
-using EasyDynamo.Config;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Extensions;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace EasyDynamo.Tools.Validators
 {
-    public class EntityValidator<TEntity> : IEntityValidator<TEntity> 
-        where TEntity : class, new()
+    public class EntityValidator : IEntityValidator
     {
-        private readonly EntityConfiguration<TEntity> entityConfiguration;
+        private readonly IEntityConfigurationProvider entityConfigurationProvider;
 
-        public EntityValidator()
+        public EntityValidator(IEntityConfigurationProvider entityConfigurationProvider)
         {
-            this.entityConfiguration = EntityConfiguration<TEntity>.Instance;
+            this.entityConfigurationProvider = entityConfigurationProvider;
         }
 
-        public IEnumerable<ValidationResult> GetValidationResults(TEntity entity)
+        public IEnumerable<ValidationResult> GetValidationResults<TEntity>(Type contextType, TEntity entity)
+            where TEntity : class
         {
             var validationContext = new ValidationContext(entity);
             var validationResults = new List<ValidationResult>();
@@ -29,27 +29,30 @@ namespace EasyDynamo.Tools.Validators
             return validationResults;
         }
 
-        public void Validate(TEntity entity)
+        public void Validate<TEntity>(Type contextType, TEntity entity) where TEntity : class
         {
-            this.ValidatePrimaryKey(entity);
+            this.ValidatePrimaryKey(contextType, entity);
 
-            this.ValidateByConfiguration(entity);
+            this.ValidateByConfiguration(contextType, entity);
 
-            this.ValidateByAttributes(entity);
+            this.ValidateByAttributes(contextType, entity);
         }
 
-        private void ValidateByConfiguration(TEntity entity)
+        private void ValidateByConfiguration<TEntity>(Type contextType, TEntity entity)
+            where TEntity : class
         {
             var errors = new List<string>();
+            var entityConfig = this.entityConfigurationProvider.GetEntityConfiguration(
+                contextType, typeof(TEntity))  as IEntityConfiguration<TEntity>;
 
-            foreach (var memberConfig in this.entityConfiguration.Properties)
+            foreach (var memberConfig in entityConfig.Properties)
             {
                 if (!memberConfig.IsRequired)
                 {
                     continue;
                 }
 
-                if (entityConfiguration.IgnoredMembersNames.Contains(memberConfig.MemberName))
+                if (entityConfig.IgnoredMembersNames.Contains(memberConfig.MemberName))
                 {
                     continue;
                 }
@@ -74,9 +77,10 @@ namespace EasyDynamo.Tools.Validators
             throw new EntityValidationFailedException(errors.JoinByNewLine());
         }
 
-        private void ValidateByAttributes(TEntity entity)
+        private void ValidateByAttributes<TEntity>(Type contextType, TEntity entity)
+            where TEntity : class
         {
-            var errors = this.GetValidationResults(entity)
+            var errors = this.GetValidationResults<TEntity>(contextType, entity)
                 .Select(vr => vr.ErrorMessage);
 
             if (errors.Any())
@@ -85,11 +89,14 @@ namespace EasyDynamo.Tools.Validators
             }
         }
 
-        private void ValidatePrimaryKey(TEntity entity)
+        private void ValidatePrimaryKey<TEntity>(Type contextType, TEntity entity)
+            where TEntity : class
         {
-            var hashKeyType = this.entityConfiguration.HashKeyMemberType;
+            var entityConfig = this.entityConfigurationProvider.GetEntityConfiguration(
+                contextType, typeof(TEntity)) as IEntityConfiguration<TEntity>;
+            var hashKeyType = entityConfig?.HashKeyMemberType;
             var hashKeyTypeDefaultValue = hashKeyType?.GetDefaultValue();
-            var hashKeyFunction = this.entityConfiguration.HashKeyMemberExpression.Compile();
+            var hashKeyFunction = entityConfig?.HashKeyMemberExpression?.Compile();
             var hashKeyMember = entity
                 .GetType()
                 .GetProperties()
@@ -97,7 +104,7 @@ namespace EasyDynamo.Tools.Validators
                     .GetCustomAttributes(false)
                         .Any(attr => attr.GetType() == typeof(DynamoDBHashKeyAttribute)));
             var hashKeyExist = 
-                (!hashKeyFunction(entity)?.Equals(hashKeyTypeDefaultValue) ?? false) || 
+                (!hashKeyFunction?.Invoke(entity)?.Equals(hashKeyTypeDefaultValue) ?? false) || 
                 hashKeyMember?.GetValue(entity) != null;
 
             if (hashKeyExist)

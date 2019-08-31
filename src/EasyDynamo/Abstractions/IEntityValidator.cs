@@ -1,12 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using EasyDynamo.Core;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace EasyDynamo.Abstractions
 {
-    public interface IEntityValidator<TEntity> where TEntity : class, new()
+    public interface IEntityValidator
     {
-        IEnumerable<ValidationResult> GetValidationResults(TEntity entity);
+        IEnumerable<ValidationResult> GetValidationResults<TEntity>(
+            Type contextType, TEntity entity) where TEntity : class;
 
-        void Validate(TEntity entity);
+        void Validate<TEntity>(Type contextType, TEntity entity) where TEntity : class;
     }
 }
