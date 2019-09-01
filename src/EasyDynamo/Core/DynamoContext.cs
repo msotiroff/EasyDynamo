@@ -3,7 +3,6 @@ using EasyDynamo.Abstractions;
 using EasyDynamo.Attributes;
 using EasyDynamo.Builders;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -12,20 +11,8 @@ namespace EasyDynamo.Core
 {
     public abstract class DynamoContext
     {
-        private readonly IServiceProvider serviceProvider;
         private readonly IDependencyResolver dependencyResolver;
         private readonly IDynamoContextOptions options;
-
-        protected DynamoContext(IServiceProvider serviceProvider)
-        {
-            this.serviceProvider = serviceProvider;
-            this.options = serviceProvider
-                .GetRequiredService<IDynamoContextOptionsProvider>()
-                .GetContextOptions(this.GetType());
-            this.Database = this.GetDatabaseFacadeInstance();
-            this.ListAllTablesByDbSets();
-            this.InstantiateAllSets();
-        }
 
         protected DynamoContext(IDependencyResolver dependencyResolver)
         {
@@ -53,9 +40,7 @@ namespace EasyDynamo.Core
         /// <summary>
         /// Use to configure the database models.
         /// </summary>
-        protected virtual void OnModelCreating<TContext>(
-            ModelBuilder<TContext> builder, IConfiguration configuration)
-            where TContext : DynamoContext
+        protected virtual void OnModelCreating(ModelBuilder builder, IConfiguration configuration)
         {
             return;
         }
@@ -79,29 +64,37 @@ namespace EasyDynamo.Core
         private object GetGenericPropertyInstance(PropertyInfo propertyInfo)
         {
             var propertyType = propertyInfo.PropertyType;
+            var implementationType = propertyType;
 
             if (!propertyType.IsGenericType)
             {
                 throw new InvalidOperationException($"{propertyType} is not a generic type.");
             }
 
-            var instance = this.serviceProvider?.GetService(propertyType)
-                ?? this.dependencyResolver?.GetDependency(propertyType);
+            if (propertyType.IsAbstract)
+            {
+                implementationType = this.dependencyResolver
+                    .TryGetDependency(propertyType)
+                    ?.GetType()
+                    ?? typeof(DynamoDbSet<>)
+                        .MakeGenericType(propertyType.GetGenericArguments());
+            }
+
+            var instance = this.dependencyResolver.TryGetDependency(implementationType);
 
             if (instance != null)
             {
                 return instance;
             }
 
-            var constructor = propertyType
+            var constructor = implementationType
                 .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
                 .Single();
             var constructorParams = constructor
                 .GetParameters()
                 .Select(pi => pi.ParameterType)
-                .Select(t => 
-                    this.serviceProvider?.GetRequiredService(t) 
-                    ?? this.dependencyResolver.GetDependency(t))
+                .Select(t => this.dependencyResolver.TryGetDependency(t))
+                .Where(dep => dep != null)
                 .ToList();
 
             constructorParams.Add(this.GetType());
@@ -149,9 +142,7 @@ namespace EasyDynamo.Core
                 .First();
             var constructorParameters = constructor
                 .GetParameters()
-                .Select(pi => 
-                    this.serviceProvider?.GetService(pi.ParameterType)
-                    ?? this.dependencyResolver?.GetDependency(pi.ParameterType))
+                .Select(pi => this.dependencyResolver.TryGetDependency(pi.ParameterType))
                 .Where(i => i != null)
                 .ToList();
 
