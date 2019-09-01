@@ -32,8 +32,8 @@ namespace EasyDynamo.Core
             ITableNameExtractor tableNameExtractor,
             IPrimaryKeyExtractor primaryKeyExtractor,
             IEntityValidator validator,
-            IEntityConfiguration<TEntity> entityConfiguration,
             IDynamoContextOptionsProvider optionsProvider,
+            IEntityConfigurationProvider entityConfigurationProvider,
             Type contextType)
         {
             this.Client = client;
@@ -43,12 +43,13 @@ namespace EasyDynamo.Core
             this.primaryKeyExtractor = primaryKeyExtractor;
             this.validator = validator;
             this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
-            this.entityConfig = entityConfiguration;
             this.contextOptions = optionsProvider.GetContextOptions(contextType);
+            this.entityConfig = entityConfigurationProvider.GetEntityConfiguration(
+                this.contextOptions.ContextType, typeof(TEntity)) as IEntityConfiguration<TEntity>;
             this.operationConfig = new DynamoDBOperationConfig
             {
                 OverrideTableName = this.tableNameExtractor.ExtractTableName(
-                    this.contextOptions, entityConfiguration, this.table),
+                    this.contextOptions, this.entityConfig, this.table),
                 Conversion = this.contextOptions.Conversion ?? DynamoDBEntryConversion.V1
             };
         }
