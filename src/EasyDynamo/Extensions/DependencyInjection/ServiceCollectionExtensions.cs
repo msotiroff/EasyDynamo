@@ -1,4 +1,5 @@
-﻿using Amazon.Extensions.NETCore.Setup;
+﻿using Amazon.DynamoDBv2;
+using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime.CredentialManagement;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Attributes;
@@ -146,6 +147,8 @@ namespace EasyDynamo.Extensions.DependencyInjection
                     SecretKey = options.SecretAccessKey
                 }),
                 new CredentialProfileStoreChain());
+
+            options.AwsOptions.DefaultClientConfig.ServiceURL = options.ServiceUrl;
         }
 
         private static void BuildConfiguration<TContext>(
