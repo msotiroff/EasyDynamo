@@ -19,7 +19,21 @@ namespace EasyDynamo.Tools.Resolvers
 
         public object GetDependency(Type dependencyType)
         {
-            return this.serviceProvider.GetService(dependencyType);
+            return this.serviceProvider.GetService(dependencyType)
+                ?? throw new InvalidOperationException(
+                    $"Unable to resolve service of type {dependencyType.FullName}.");
+        }
+
+        public object TryGetDependency(Type dependencyType)
+        {
+            try
+            {
+                return this.GetDependency(dependencyType);
+            }
+            catch
+            {
+                return default;
+            }
         }
     }
 }

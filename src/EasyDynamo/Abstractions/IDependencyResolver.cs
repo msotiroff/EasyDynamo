@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq.Expressions;
 
 namespace EasyDynamo.Abstractions
 {
@@ -8,5 +7,7 @@ namespace EasyDynamo.Abstractions
         TDependency GetDependency<TDependency>();
 
         object GetDependency(Type dependencyType);
+
+        object TryGetDependency(Type dependencyType);
     }
 }
