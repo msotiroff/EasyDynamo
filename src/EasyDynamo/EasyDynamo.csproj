@@ -10,7 +10,7 @@
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.0-beta.1</Version>
+    <Version>1.1.0</Version>
     <Authors>Mihail Sotirov</Authors>
     <PackageReleaseNotes>Added possibility to work with multiple custom implementations of EasyDynamo.Core.DynamoContext.</PackageReleaseNotes>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
