@@ -2,6 +2,7 @@
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Extensions.NETCore.Setup;
 using EasyDynamo.Abstractions;
+using EasyDynamo.Attributes;
 using EasyDynamo.Builders;
 using EasyDynamo.Config;
 using EasyDynamo.Core;
@@ -174,7 +175,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
             IDynamoContextOptions contextOptions) 
             where TContext : DynamoContext
         {
-            var modelBuilder = new ModelBuilder<TContext>(contextOptions);
+            var modelBuilder = new ModelBuilder(contextOptions);
             var modelCreatingMethod = typeof(TContext)
                 .GetMethod("OnModelCreating", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -194,6 +195,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
                 .Where(t => t.IsClass &&
                     !t.IsAbstract &&
                     !t.IsGenericType &&
+                    t.GetCustomAttribute<IgnoreAutoResolvingAttribute>() == null &&
                     t.GetInterfaces()
                         .Any(i => i.Name == $"I{t.Name}"))
                 .Select(t => new
