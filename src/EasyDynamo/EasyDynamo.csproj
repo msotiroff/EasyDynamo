@@ -6,15 +6,16 @@
     <PackageProjectUrl>https://github.com/msotiroff/EasyDynamo/tree/master/src</PackageProjectUrl>
     <RepositoryUrl>https://github.com/msotiroff/EasyDynamo</RepositoryUrl>
     <PackageIconUrl>https://github.com/msotiroff/EasyDynamo/blob/master/logo.jpg?raw=true</PackageIconUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/msotiroff/EasyDynamo/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <RepositoryType>Public</RepositoryType>
     <PackageTags>AWS, Amazon, DynamoDB</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.5</Version>
+    <Version>1.1.0-alpha.1</Version>
     <Authors>Mihail Sotirov</Authors>
-    <PackageReleaseNotes>Added an abstraction for DynamoDbSet&lt;T&gt; in order to be easily mocked.</PackageReleaseNotes>
-    <AssemblyVersion>1.0.5.0</AssemblyVersion>
-    <FileVersion>1.0.5.0</FileVersion>
+    <PackageReleaseNotes>Added possibility to work with multiple custom implementations of EasyDynamo.Core.DynamoContext.</PackageReleaseNotes>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,13 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
