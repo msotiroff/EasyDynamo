@@ -11,9 +11,9 @@ namespace EasyDynamo.Tools.Providers
     {
         private readonly IEnumerable<IDynamoContextOptions> allOptions;
 
-        public DynamoContextOptionsProvider(IEnumerable<IDynamoContextOptions> options)
+        public DynamoContextOptionsProvider(IEnumerable<IDynamoContextOptions> options = null)
         {
-            this.allOptions = options;
+            this.allOptions = options ?? new List<IDynamoContextOptions>();
         }
 
         public IDynamoContextOptions GetContextOptions<TContext>() 
