@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace EasyDynamo.Builders
 {
-    public class ModelBuilder<TContext> where TContext : DynamoContext
+    public class ModelBuilder
     {
         private readonly IDynamoContextOptions contextOptions;
         private readonly Dictionary<Type, object> entityBuildersByEntityType;
@@ -27,12 +27,14 @@ namespace EasyDynamo.Builders
         /// and build all configurations in the Configure method.
         /// Then call ApplyConfiguration with a new instance of that implementation class.
         /// </summary>
-        public ModelBuilder<TContext> ApplyConfiguration<TEntity>(
-            IEntityTypeConfiguration<TContext, TEntity> configuration) where TEntity : class, new()
+        public ModelBuilder ApplyConfiguration<TContext, TEntity>(
+            IEntityTypeConfiguration<TContext, TEntity> configuration)
+            where TContext : DynamoContext
+            where TEntity : class, new()
         {
             InputValidator.ThrowIfNull(configuration, "configuration connot be null.");
 
-            var entityBuilder = this.GetEntityBuilder<TEntity>();
+            var entityBuilder = this.GetEntityBuilder<TContext, TEntity>();
             
             configuration.Configure(entityBuilder);
 
@@ -42,29 +44,33 @@ namespace EasyDynamo.Builders
         /// <summary>
         /// Returns a builder for a specified entity type.
         /// </summary>
-        public IEntityTypeBuilder<TContext, TEntity> Entity<TEntity>() where TEntity : class, new()
+        public IEntityTypeBuilder<TContext, TEntity> Entity<TContext, TEntity>()
+            where TContext : DynamoContext
+            where TEntity : class, new()
         {
-            return this.GetEntityBuilder<TEntity>();
+            return this.GetEntityBuilder<TContext, TEntity>();
         }
 
         /// <summary>
         /// Applies a specific configuration for a given entity. 
         /// Insert the entity configuration in the buildAction parameter.
         /// </summary>
-        public ModelBuilder<TContext> Entity<TEntity>(
-            Action<IEntityTypeBuilder<TContext, TEntity>> buildAction) 
+        public ModelBuilder Entity<TContext, TEntity>(
+            Action<IEntityTypeBuilder<TContext, TEntity>> buildAction)
+            where TContext : DynamoContext
             where TEntity : class, new()
         {
             InputValidator.ThrowIfNull(buildAction, "buildAction cannot be null.");
 
-            var entityBuilder = this.GetEntityBuilder<TEntity>();
+            var entityBuilder = this.GetEntityBuilder<TContext, TEntity>();
 
             buildAction(entityBuilder);
 
             return this;
         }
 
-        private IEntityTypeBuilder<TContext, TEntity> GetEntityBuilder<TEntity>() 
+        private IEntityTypeBuilder<TContext, TEntity> GetEntityBuilder<TContext, TEntity>()
+            where TContext : DynamoContext
             where TEntity : class, new()
         {
             var entityConfig = default(EntityConfiguration<TContext, TEntity>);
