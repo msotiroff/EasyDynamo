@@ -1,5 +1,6 @@
 ﻿using Amazon;
 using Amazon.DynamoDBv2;
+using Amazon.Extensions.NETCore.Setup;
 using System;
 using System.Collections.Generic;
 
@@ -22,6 +23,8 @@ namespace EasyDynamo.Abstractions
         string ServiceUrl { get; set; }
 
         DynamoDBEntryConversion Conversion { get; set; }
+
+        AWSOptions AwsOptions { get; set; }
 
         IDictionary<Type, string> TableNameByEntityTypes { get; }
 

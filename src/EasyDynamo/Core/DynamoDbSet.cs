@@ -26,8 +26,6 @@ namespace EasyDynamo.Core
         private readonly IEntityValidator validator;
 
         public DynamoDbSet(
-            IAmazonDynamoDB client,
-            IDynamoDBContext dbContext,
             IIndexExtractor indexExtractor,
             ITableNameExtractor tableNameExtractor,
             IPrimaryKeyExtractor primaryKeyExtractor,
@@ -36,14 +34,14 @@ namespace EasyDynamo.Core
             IEntityConfigurationProvider entityConfigurationProvider,
             Type contextType)
         {
-            this.Client = client;
-            this.Base = dbContext;
+            this.contextOptions = optionsProvider.GetContextOptions(contextType);
+            this.Client = this.contextOptions.AwsOptions.CreateServiceClient<IAmazonDynamoDB>();
+            this.Base = new DynamoDBContext(this.Client);
             this.indexExtractor = indexExtractor;
             this.tableNameExtractor = tableNameExtractor;
             this.primaryKeyExtractor = primaryKeyExtractor;
             this.validator = validator;
             this.table = this.Base.TryGetTargetTable<TEntity>(this.operationConfig);
-            this.contextOptions = optionsProvider.GetContextOptions(contextType);
             this.entityConfig = entityConfigurationProvider.GetEntityConfiguration(
                 this.contextOptions.ContextType, typeof(TEntity)) as IEntityConfiguration<TEntity>;
             this.operationConfig = new DynamoDBOperationConfig

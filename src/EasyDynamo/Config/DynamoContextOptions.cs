@@ -1,5 +1,6 @@
 ﻿using Amazon;
 using Amazon.DynamoDBv2;
+using Amazon.Extensions.NETCore.Setup;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Attributes;
 using EasyDynamo.Core;
@@ -19,6 +20,7 @@ namespace EasyDynamo.Config
 
             this.ContextType = contextType;
             this.TableNameByEntityTypes = new Dictionary<Type, string>();
+            this.AwsOptions = new AWSOptions();
         }
 
         public Type ContextType { get; }
@@ -38,6 +40,8 @@ namespace EasyDynamo.Config
         public string Profile { get; set; }
 
         public DynamoDBEntryConversion Conversion { get; set; }
+
+        public AWSOptions AwsOptions { get; set; }
 
         public void ValidateLocalMode()
         {

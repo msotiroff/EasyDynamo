@@ -1,6 +1,5 @@
-﻿using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
-using Amazon.Extensions.NETCore.Setup;
+﻿using Amazon.Extensions.NETCore.Setup;
+using Amazon.Runtime.CredentialManagement;
 using EasyDynamo.Abstractions;
 using EasyDynamo.Attributes;
 using EasyDynamo.Builders;
@@ -90,8 +89,6 @@ namespace EasyDynamo.Extensions.DependencyInjection
 
             services.AddSingleton<TContext>();
             services.AddSingleton(typeof(IDynamoDbSet<>), typeof(DynamoDbSet<>));
-            services.AddSingleton<IDynamoDBContext>(
-                sp => new DynamoDBContext(sp.GetRequiredService<IAmazonDynamoDB>()));
 
             services.AddDynamoClient(awsOptions, contextOptions);
 
@@ -113,7 +110,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
 
             if (options.LocalMode)
             {
-                AddDynamoLocalClient(services, options);
+                AddDynamoLocalClient(options);
 
                 return services; ;
             }
@@ -135,23 +132,20 @@ namespace EasyDynamo.Extensions.DependencyInjection
             awsOptions.Profile = awsOptions?.Profile ?? contextOptions.Profile;
             awsOptions.Region = awsOptions?.Region ?? contextOptions.RegionEndpoint;
 
-
-            services.AddAWSService<IAmazonDynamoDB>(awsOptions);
+            contextOptions.AwsOptions = awsOptions;
         }
 
-        private static void AddDynamoLocalClient(
-            IServiceCollection services, IDynamoContextOptions options)
+        private static void AddDynamoLocalClient(IDynamoContextOptions options)
         {
             options.ValidateLocalMode();
 
-            var clientConfig = new AmazonDynamoDBConfig
-            {
-                ServiceURL = options.ServiceUrl
-            };
-            
-            services.AddSingleton<IAmazonDynamoDB>(
-                sp => new AmazonDynamoDBClient(
-                        options.AccessKeyId, options.SecretAccessKey, clientConfig));
+            options.AwsOptions.Credentials = AWSCredentialsFactory.GetAWSCredentials(
+                new CredentialProfile(options.Profile, new CredentialProfileOptions
+                {
+                    AccessKey = options.AccessKeyId,
+                    SecretKey = options.SecretAccessKey
+                }),
+                new CredentialProfileStoreChain());
         }
 
         private static void BuildConfiguration<TContext>(
