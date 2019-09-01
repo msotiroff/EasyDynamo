@@ -1,6 +1,7 @@
 ﻿using Amazon;
 using Amazon.DynamoDBv2;
 using EasyDynamo.Abstractions;
+using EasyDynamo.Attributes;
 using EasyDynamo.Core;
 using EasyDynamo.Exceptions;
 using EasyDynamo.Tools.Validators;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 
 namespace EasyDynamo.Config
 {
+    [IgnoreAutoResolving]
     public class DynamoContextOptions : IDynamoContextOptions
     {
         protected internal DynamoContextOptions(Type contextType)
