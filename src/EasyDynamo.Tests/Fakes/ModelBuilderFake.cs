@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace EasyDynamo.Tests.Fakes
 {
-    public class ModelBuilderFake : ModelBuilder<FakeDynamoContext>
+    public class ModelBuilderFake : ModelBuilder
     {
         protected internal ModelBuilderFake(IDynamoContextOptions contextOptions) 
             : base(contextOptions)

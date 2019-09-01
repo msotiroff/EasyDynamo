@@ -61,7 +61,7 @@ namespace EasyDynamo.Tests.Builders
         [Fact]
         public void Entity_ReturnsEntityBuilderOfCorrectType()
         {
-            var entBuilder = this.builder.Entity<FakeEntity>();
+            var entBuilder = this.builder.Entity<FakeDynamoContext, FakeEntity>();
 
             Assert.Equal(
                 typeof(EntityTypeBuilder<FakeDynamoContext, FakeEntity>), 
@@ -71,7 +71,7 @@ namespace EasyDynamo.Tests.Builders
         [Fact]
         public void Entity_AddsCorrectKeyValuePairInTheMap()
         {
-            this.builder.Entity<FakeEntity>();
+            this.builder.Entity<FakeDynamoContext, FakeEntity>();
 
             Assert.Single(this.builder.EntityConfigurationsFromBase);
             Assert.Contains(
@@ -97,7 +97,7 @@ namespace EasyDynamo.Tests.Builders
                 e.HasPrimaryKey(ent => ent.Id);
             };
 
-            this.builder.Entity<FakeEntity>(buildAction);
+            this.builder.Entity<FakeDynamoContext, FakeEntity>(buildAction);
 
             Assert.Single(buildAction.GetInvocationList());
         }
@@ -110,7 +110,7 @@ namespace EasyDynamo.Tests.Builders
                 e.HasPrimaryKey(ent => ent.Id);
             };
 
-            var returnedBuilder = this.builder.Entity<FakeEntity>(buildAction);
+            var returnedBuilder = this.builder.Entity<FakeDynamoContext, FakeEntity>(buildAction);
 
             Assert.Equal(this.builder, returnedBuilder);
         }

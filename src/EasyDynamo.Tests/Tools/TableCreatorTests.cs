@@ -26,7 +26,7 @@ namespace EasyDynamo.Tests.Tools
         private readonly Mock<IEntityConfigurationProvider> entityConfigurationProviderMock;
         private readonly Mock<IDynamoContextOptions> dynamoContextOptionsMock;
         private readonly TableCreator creator;
-        private readonly ModelBuilder<FakeDynamoContext> modelBuilder;
+        private readonly ModelBuilder modelBuilder;
 
         public TableCreatorTests()
         {
@@ -69,7 +69,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -130,7 +130,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -161,7 +161,7 @@ namespace EasyDynamo.Tests.Tools
             {
                 var definitions = new List<AttributeDefinition>();
 
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -197,7 +197,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -228,7 +228,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -260,7 +260,7 @@ namespace EasyDynamo.Tests.Tools
             await TestRetrier.RetryAsync(async () =>
             {
                 const int ReadCapacity = 22;
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                     entity.HasReadCapacityUnits(ReadCapacity);
@@ -292,7 +292,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -324,7 +324,7 @@ namespace EasyDynamo.Tests.Tools
             await TestRetrier.RetryAsync(async () =>
             {
                 const int WriteCapacity = 22;
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                     entity.HasWriteCapacityUnits(WriteCapacity);
@@ -356,7 +356,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });
@@ -381,7 +381,7 @@ namespace EasyDynamo.Tests.Tools
         {
             await TestRetrier.RetryAsync(async () =>
             {
-                this.modelBuilder.Entity<FakeEntity>(entity =>
+                this.modelBuilder.Entity<FakeDynamoContext, FakeEntity>(entity =>
                 {
                     entity.HasPrimaryKey(e => e.Id);
                 });

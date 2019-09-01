@@ -1,14 +1,14 @@
-﻿using EasyDynamo.Builders;
+﻿using EasyDynamo.Abstractions;
+using EasyDynamo.Builders;
 using EasyDynamo.Core;
 using Microsoft.Extensions.Configuration;
-using System;
 
 namespace EasyDynamo.Tests.Fakes
 {
     public class FakeDynamoContext : DynamoContext
     {
-        public FakeDynamoContext(IServiceProvider serviceProvider) 
-            : base(serviceProvider)
+        public FakeDynamoContext(IDependencyResolver dependencyResolver) 
+            : base(dependencyResolver)
         {
         }
 
@@ -24,8 +24,8 @@ namespace EasyDynamo.Tests.Fakes
             base.OnConfiguring(builder, configuration);
         }
 
-        protected override void OnModelCreating<FakeDynamoContext>(
-            ModelBuilder<FakeDynamoContext> builder, IConfiguration configuration)
+        protected override void OnModelCreating(
+            ModelBuilder builder, IConfiguration configuration)
         {
             OnModelCreatingInvoked = true;
 
