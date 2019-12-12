@@ -111,7 +111,7 @@ namespace EasyDynamo.Extensions.DependencyInjection
 
             if (options.LocalMode)
             {
-                AddDynamoLocalClient(options);
+                AddDynamoLocalClient(services, options);
 
                 return services; ;
             }
@@ -128,18 +128,20 @@ namespace EasyDynamo.Extensions.DependencyInjection
             IDynamoContextOptions contextOptions,
             AWSOptions awsOptions)
         {
-            contextOptions.ValidateCloudMode();
-
             awsOptions.Profile = awsOptions?.Profile ?? contextOptions.Profile;
             awsOptions.Region = awsOptions?.Region ?? contextOptions.RegionEndpoint;
 
             contextOptions.AwsOptions = awsOptions;
+
+            //contextOptions.ValidateCloudMode();
+
+            services.AddAWSService<IAmazonDynamoDB>(awsOptions);
         }
 
-        private static void AddDynamoLocalClient(IDynamoContextOptions options)
+        private static void AddDynamoLocalClient(
+            IServiceCollection services,
+            IDynamoContextOptions options)
         {
-            options.ValidateLocalMode();
-
             options.AwsOptions.Credentials = AWSCredentialsFactory.GetAWSCredentials(
                 new CredentialProfile(options.Profile, new CredentialProfileOptions
                 {
@@ -149,6 +151,10 @@ namespace EasyDynamo.Extensions.DependencyInjection
                 new CredentialProfileStoreChain());
 
             options.AwsOptions.DefaultClientConfig.ServiceURL = options.ServiceUrl;
+
+            //options.ValidateLocalMode();
+
+            services.AddAWSService<IAmazonDynamoDB>(options.AwsOptions);
         }
 
         private static void BuildConfiguration<TContext>(
