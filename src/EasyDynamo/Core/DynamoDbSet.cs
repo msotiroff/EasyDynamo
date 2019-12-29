@@ -91,8 +91,6 @@ namespace EasyDynamo.Core
         {
             InputValidator.ThrowIfNull(entity);
 
-            this.ExecuteTasksOnSave(entity);
-
             await this.ExecuteBatchWriteAsync(entity);
         }
 
@@ -347,6 +345,11 @@ namespace EasyDynamo.Core
 
         private async Task ExecuteBatchWriteAsync(params TEntity[] entities)
         {
+            foreach (var entity in entities)
+            {
+                this.ExecuteTasksOnSave(entity);
+            }
+
             var batchWrite = this.Base.CreateBatchWrite<TEntity>(this.operationConfig);
 
             batchWrite.AddPutItems(entities);
