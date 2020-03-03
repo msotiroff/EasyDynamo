@@ -34,7 +34,6 @@ namespace EasyDynamo.Core
             DynamoContextOptionsBuilder builder, 
             IConfiguration configuration)
         {
-            return;
         }
 
         /// <summary>
@@ -42,7 +41,6 @@ namespace EasyDynamo.Core
         /// </summary>
         protected virtual void OnModelCreating(ModelBuilder builder, IConfiguration configuration)
         {
-            return;
         }
 
         private void InstantiateAllSets()

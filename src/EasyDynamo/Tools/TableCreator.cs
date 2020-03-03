@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EasyDynamo.Tools
@@ -21,7 +22,7 @@ namespace EasyDynamo.Tools
         private readonly IAttributeDefinitionFactory attributeDefinitionFactory;
         private readonly IIndexConfigurationFactory indexConfigurationFactory;
         private readonly IEntityConfigurationProvider entityConfigurationProvider;
-        
+
         public TableCreator(
             IAmazonDynamoDB client,
             IIndexFactory indexFactory,
@@ -43,59 +44,47 @@ namespace EasyDynamo.Tools
 
             var dynamoDbTableAttribute = entityType.GetCustomAttribute<DynamoDBTableAttribute>(true);
             tableName = dynamoDbTableAttribute?.TableName ?? tableName;
-            var hashKeyMember = entityType
-                .GetProperties()
-                .SingleOrDefault(pi => pi.GetCustomAttributes()
-                    .Any(attr => attr.GetType() == typeof(DynamoDBHashKeyAttribute)));
-            var hashKeyMemberAttribute = entityType
-                .GetProperty(hashKeyMember?.Name ?? string.Empty)
-                ?.GetCustomAttribute<DynamoDBHashKeyAttribute>(true);
-            var hashKeyMemberType = entityType
-                .GetProperty(hashKeyMember?.Name ?? string.Empty)
-                ?.PropertyType;
-            var entityConfigRequired = hashKeyMember == null;
+          
             var entityConfig = this.entityConfigurationProvider
                 .TryGetEntityConfiguration(contextType, entityType);
-
-            if (entityConfigRequired && entityConfig == null)
-            {
-                throw new DynamoContextConfigurationException(string.Format(
-                    ExceptionMessage.EntityConfigurationNotFound, entityType.FullName));
-            }
-
-            var hashKeyMemberName = entityConfig?.HashKeyMemberName
-                ?? hashKeyMemberAttribute.AttributeName
-                ?? hashKeyMember.Name;
-            var hashKeyMemberAttributeType = new ScalarAttributeType(
-                hashKeyMemberType != null
-                ? Constants.AttributeTypesMap[hashKeyMemberType]
-                : Constants.AttributeTypesMap[entityConfig.HashKeyMemberType]);
+            
+            var hashKeyInfo = GetHashKeyInfo(entityConfig, entityType);
+            
             var readCapacityUnits = entityConfig?.ReadCapacityUnits
-                ?? Constants.DefaultReadCapacityUnits;
+                                    ?? Constants.DefaultReadCapacityUnits;
             var writeCapacityUnits = entityConfig?.WriteCapacityUnits
-                ?? Constants.DefaultWriteCapacityUnits;
-            var gsisConfiguration = (entityConfig?.Indexes?.Count ?? 0) > 0
-                ? entityConfig.Indexes
-                : this.indexConfigurationFactory.CreateIndexConfigByAttributes(entityType);
+                                     ?? Constants.DefaultWriteCapacityUnits;
+
+            var gsisConfiguration = GetGlobalSecondaryIndices(entityConfig, entityType);
 
             var request = new CreateTableRequest
             {
                 TableName = tableName,
                 AttributeDefinitions = this.attributeDefinitionFactory.CreateAttributeDefinitions(
-                    hashKeyMemberName, hashKeyMemberAttributeType, gsisConfiguration).ToList(),
+                    hashKeyInfo.HashKeyMemberName, hashKeyInfo.HashKeyMemberAttributeType, gsisConfiguration).ToList(),
                 KeySchema = new List<KeySchemaElement>
                 {
-                    new KeySchemaElement(hashKeyMemberName, KeyType.HASH)
+                    new KeySchemaElement(hashKeyInfo.HashKeyMemberName, KeyType.HASH)
                 },
-                ProvisionedThroughput = new ProvisionedThroughput
+                GlobalSecondaryIndexes = gsisConfiguration.Count() == 0
+                    ? null
+                    : this.indexFactory.CreateRequestIndexes(gsisConfiguration).ToList(),
+                
+            };
+            
+            if(entityConfig?.HasDynamicBilling  ?? false)
+            {
+                request.BillingMode = BillingMode.PAY_PER_REQUEST;    
+            }
+            else
+            {
+                request.ProvisionedThroughput = new ProvisionedThroughput
                 {
                     ReadCapacityUnits = readCapacityUnits,
                     WriteCapacityUnits = writeCapacityUnits
-                },
-                GlobalSecondaryIndexes = gsisConfiguration.Count() == 0
-                ? null
-                : this.indexFactory.CreateRequestIndexes(gsisConfiguration).ToList()
-            };
+                };
+            }
+            
 
             try
             {
@@ -107,6 +96,29 @@ namespace EasyDynamo.Tools
                         response.ResponseMetadata.Metadata.JoinByNewLine());
                 }
 
+                if (string.IsNullOrWhiteSpace(entityConfig.TTLMemberName))
+                {
+                    return request.TableName;
+                }
+                // Before we can set the TTL we need the table fully created
+                while (true)
+                {
+                    var checkTables = await this.client.DescribeTableAsync(tableName);
+                    if (checkTables.Table.TableStatus == TableStatus.ACTIVE)
+                    {
+                        break;
+                    }
+                    Thread.Sleep(500);
+                }
+                await this.client.UpdateTimeToLiveAsync(new UpdateTimeToLiveRequest
+                {
+                    TableName = tableName,
+                    TimeToLiveSpecification = new TimeToLiveSpecification
+                    {
+                        AttributeName = entityConfig.TTLMemberName,
+                        Enabled = true
+                    }
+                });
                 return request.TableName;
             }
             catch (Exception ex)
@@ -114,5 +126,135 @@ namespace EasyDynamo.Tools
                 throw new CreateTableFailedException("Failed to create a table.", ex);
             }
         }
+
+        public async Task UpdateTableAsync(Type contextType, Type entityType, string tableName)
+        {
+            var tableDescription = this.client.DescribeTableAsync(tableName);
+            var secondaryIndexes = tableDescription.Result.Table.GlobalSecondaryIndexes;
+
+            var entityConfig = this.entityConfigurationProvider
+                .TryGetEntityConfiguration(contextType, entityType);
+            
+         
+
+            var gsisConfiguration = GetGlobalSecondaryIndices(entityConfig, entityType);
+
+
+            foreach (var index in secondaryIndexes)
+            {
+                var existingIndex = (from x in gsisConfiguration
+                    where x.IndexName == index.IndexName
+                    select x).FirstOrDefault();
+                // There is an index in Dynamo that is not in our config, we need to delete it
+                if (existingIndex == null)
+                {
+                    await this.client.UpdateTableAsync(new UpdateTableRequest
+                    {
+                        TableName = tableName,
+                        GlobalSecondaryIndexUpdates = new List<GlobalSecondaryIndexUpdate>
+                        {
+                            new GlobalSecondaryIndexUpdate
+                            {
+                                Delete = new DeleteGlobalSecondaryIndexAction
+                                {
+                                    IndexName = index.IndexName
+                                }
+                            }
+                        }
+
+                    });
+                }
+            }
+            var hashKeyInfo = GetHashKeyInfo(entityConfig, entityType);
+
+            foreach (var index in gsisConfiguration)
+            {
+                var existingIndex = (from x in secondaryIndexes
+                    where x.IndexName == index.IndexName
+                    select x).FirstOrDefault();
+                // There is an index in schema that is not in DynamoDb
+                if (existingIndex != null)
+                {
+                    continue;
+                }
+                var gsisConfig =this.indexFactory.CreateRequestIndexes(new[] {index}).ElementAt(0);
+                await this.client.UpdateTableAsync(new UpdateTableRequest
+                {
+                    TableName = tableName,
+                    GlobalSecondaryIndexUpdates = new List<GlobalSecondaryIndexUpdate>
+                    {
+                        new GlobalSecondaryIndexUpdate
+                        {
+                            Create = new CreateGlobalSecondaryIndexAction
+                            {
+                                IndexName = index.IndexName,
+                                KeySchema = gsisConfig.KeySchema,
+                                Projection = gsisConfig.Projection
+                            }
+                        }
+                    },
+                    AttributeDefinitions = this.attributeDefinitionFactory.CreateAttributeDefinitions(
+                        hashKeyInfo.HashKeyMemberName, hashKeyInfo.HashKeyMemberAttributeType, gsisConfiguration).ToList(),
+
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(entityConfig.TTLMemberName))
+            {
+                var result = await this.client.DescribeTimeToLiveAsync(new DescribeTimeToLiveRequest
+                {
+                    TableName = tableName
+                });
+                if(result.TimeToLiveDescription.TimeToLiveStatus == TimeToLiveStatus.ENABLED || result.TimeToLiveDescription.TimeToLiveStatus == TimeToLiveStatus.ENABLING)
+                {
+                    return;
+                }
+                await this.client.UpdateTimeToLiveAsync(new UpdateTimeToLiveRequest
+                {
+                    TableName = tableName,
+                    TimeToLiveSpecification = new TimeToLiveSpecification
+                    {
+                        AttributeName = entityConfig.TTLMemberName,
+                        Enabled = true
+                    }
+                });
+            }
+        }
+
+        private List<GlobalSecondaryIndexConfiguration> GetGlobalSecondaryIndices(IEntityConfiguration entityConfig, Type entityType)
+        {
+            return ((entityConfig?.Indexes?.Count ?? 0) > 0
+              ? entityConfig.Indexes
+              : this.indexConfigurationFactory.CreateIndexConfigByAttributes(entityType)).ToList();
+        }
+
+        private (string HashKeyMemberName, Type HashKeyMemberType, ScalarAttributeType HashKeyMemberAttributeType ) GetHashKeyInfo(IEntityConfiguration entityConfig,Type entityType)
+        {
+            var hashKeyMember = entityType
+             .GetProperties()
+             .SingleOrDefault(pi => pi.GetCustomAttributes()
+                 .Any(attr => attr.GetType() == typeof(DynamoDBHashKeyAttribute)));
+            if (hashKeyMember == null && entityConfig == null)
+            {
+                throw new DynamoContextConfigurationException(string.Format(
+                    ExceptionMessage.EntityConfigurationNotFound, entityType.FullName));
+            }
+            var hashKeyMemberAttribute = entityType
+                .GetProperty(hashKeyMember?.Name ?? string.Empty)
+                ?.GetCustomAttribute<DynamoDBHashKeyAttribute>(true);
+            var hashKeyMemberType = entityType
+                .GetProperty(hashKeyMember?.Name ?? string.Empty)
+                ?.PropertyType;
+
+            var hashKeyMemberName = entityConfig?.HashKeyMemberName
+                                    ?? hashKeyMemberAttribute.AttributeName
+                                    ?? hashKeyMember.Name;
+            var hashKeyMemberAttributeType = new ScalarAttributeType(
+                hashKeyMemberType != null
+                    ? Constants.AttributeTypesMap[hashKeyMemberType]
+                    : Constants.AttributeTypesMap[entityConfig.HashKeyMemberType]);
+            return (hashKeyMemberName, hashKeyMemberType, hashKeyMemberAttributeType);
+        }
     }
 }
+

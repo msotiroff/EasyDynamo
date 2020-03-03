@@ -134,6 +134,23 @@ namespace EasyDynamo.Builders
             return this;
         }
 
+        public IEntityTypeBuilder<TContext, TEntity> HasSortKey(Expression<Func<TEntity, object>> keyExpression)
+        {
+            InputValidator.ThrowIfNull(keyExpression, "keyExpression cannot be null.");
+
+            this.entityConfig.SortKeyMemberExpression = keyExpression;
+            this.entityConfig.SortKeyMemberName = keyExpression.TryGetMemberName();
+            this.entityConfig.SortKeyMemberType = keyExpression.TryGetMemberType();
+
+            return this;
+        }
+
+        public IEntityTypeBuilder<TContext, TEntity> HasDynamicBilling()
+        {
+            this.entityConfig.HasDynamicBilling = true;
+            return this;
+        }
+
         /// <summary>
         /// Ignore that property when save the entity to the database. 
         /// All ignored members will be set to its default value before saving in the database.
@@ -227,6 +244,12 @@ namespace EasyDynamo.Builders
 
             this.entityConfig.WriteCapacityUnits = writeCapacityUnits;
 
+            return this;
+        }
+
+        public IEntityTypeBuilder<TContext, TEntity> HasTTL(Expression<Func<TEntity, object>> keyExpression)
+        {
+            this.entityConfig.TTLMemberName = keyExpression.TryGetMemberName();
             return this;
         }
     }
