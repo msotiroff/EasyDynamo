@@ -23,10 +23,15 @@ namespace EasyDynamo.Abstractions
 
         IEntityTypeBuilder<TContext, TEntity> HasPrimaryKey(
             Expression<Func<TEntity, object>> keyExpression);
+        
+        IEntityTypeBuilder<TContext, TEntity> HasSortKey(
+            Expression<Func<TEntity, object>> keyExpression);
 
         IEntityTypeBuilder<TContext, TEntity> HasReadCapacityUnits(long readCapacityUnits);
 
         IEntityTypeBuilder<TContext, TEntity> HasWriteCapacityUnits(long writeCapacityUnits);
+        
+        IEntityTypeBuilder<TContext, TEntity> HasDynamicBilling();
 
         IEntityTypeBuilder<TContext, TEntity> Ignore(
             Expression<Func<TEntity, object>> propertyExpression);
@@ -37,5 +42,8 @@ namespace EasyDynamo.Abstractions
 
         IPropertyTypeBuilder Property<TProperty>(
             Expression<Func<TEntity, TProperty>> propertyExpression);
+
+        IEntityTypeBuilder<TContext, TEntity> HasTTL(
+            Expression<Func<TEntity, object>> keyExpression);
     }
 }

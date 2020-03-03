@@ -10,6 +10,10 @@ namespace EasyDynamo.Abstractions
 
         Type HashKeyMemberType { get; set; }
 
+        string SortKeyMemberName { get; }
+        
+        Type SortKeyMemberType { get; set; }
+        
         ISet<string> IgnoredMembersNames { get; }
 
         ISet<GlobalSecondaryIndexConfiguration> Indexes { get; }
@@ -21,5 +25,9 @@ namespace EasyDynamo.Abstractions
         long WriteCapacityUnits { get; set; }
 
         bool ValidateOnSave { get; set; }
+
+        string TTLMemberName { get; set; }
+        
+        bool HasDynamicBilling { get; set; }
     }
 }

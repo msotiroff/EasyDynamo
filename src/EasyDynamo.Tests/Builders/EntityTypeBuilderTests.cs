@@ -292,6 +292,8 @@ namespace EasyDynamo.Tests.Builders
                 this.entityConfig.Indexes,
                 i => i.IndexName == SampleIndexName);
         }
+        
+        
 
         [Fact]
         public void HasGlobalSecondaryIndex_ValidAction_SetHashKeyNameCorrectly()
@@ -614,6 +616,22 @@ namespace EasyDynamo.Tests.Builders
             var returnedBuilder = this.builder.HasWriteCapacityUnits(5);
 
             Assert.Equal(this.builder, returnedBuilder);
+        }
+
+        [Fact]
+        public void HasDynamicBillingCorrectly_WhenTrue()
+        {
+            this.builder.HasDynamicBilling();
+            Assert.Equal(true, this.entityConfig.HasDynamicBilling);
+
+        }
+        
+        
+        [Fact]
+        public void HasDynamicBillingCorrectly_WhenFalse()
+        {
+            Assert.Equal(false, this.entityConfig.HasDynamicBilling);
+
         }
     }
 }

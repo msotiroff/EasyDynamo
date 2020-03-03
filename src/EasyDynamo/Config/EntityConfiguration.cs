@@ -34,6 +34,10 @@ namespace EasyDynamo.Config
         public string TableName { get; set; }
 
         public string HashKeyMemberName { get; set; }
+        
+        public string SortKeyMemberName { get; set; }
+        
+        public bool HasDynamicBilling { get; set; }
 
         public long ReadCapacityUnits
         {
@@ -60,15 +64,22 @@ namespace EasyDynamo.Config
         }
 
         public Type HashKeyMemberType { get; set; }
+        
+        public Type SortKeyMemberType { get; set; }
+
 
         public bool ValidateOnSave { get; set; }
         
         public Expression<Func<TEntity, object>> HashKeyMemberExpression { get; set; }
+        
+        public Expression<Func<TEntity, object>> SortKeyMemberExpression { get; set; }
 
         public ISet<GlobalSecondaryIndexConfiguration> Indexes { get; }
 
         public ISet<string> IgnoredMembersNames { get; }
 
         public ISet<Expression<Func<TEntity, object>>> IgnoredMembersExpressions { get; }
+       
+        public string TTLMemberName { get; set ; }
     }
 }
